@@ -9,8 +9,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 # Configure application
 app = Flask(__name__)
-# Custom filter
-app.jinja_env.filters["usd"] = usd
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
@@ -45,11 +43,11 @@ def close_db(error):
 
 
 @app.route("/")
-@login_required
 def index():
+    return render_template("layout.html")
 
-
-
+if __name__ == "__main__":
+    app.run(debug=True)
 
 
 
