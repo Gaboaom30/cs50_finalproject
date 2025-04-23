@@ -1,0 +1,83 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Inventory
+{% endblock %}
+
+{% block h1 %}
+    <h1>Inventory</h1>
+{% endblock %}
+
+{% block main %}
+<div class="container text-center mt-4">
+    <!-- Search input -->
+    <div class="input-group w-50 mx-auto mb-4">
+        <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
+    </div>
+
+    <!-- Table header (static) -->
+    <div class="row fw-bold border-bottom pb-2">
+        <div class="col">Code</div>
+        <div class="col">Category</div>
+        <div class="col">Name</div>
+        <div class="col">Price</div>
+        <div class="col">Stock</div>
+    </div>
+
+    <!-- Table body (dynamic) -->
+    <div id="inventory-table">
+        {% for item in inv %}
+            <div class="row py-2 border-bottom">
+                <div class="col">{{ item.id }}</div>
+                <div class="col">{{ item.category }}</div>
+                <div class="col">{{ item.name }}</div>
+                <div class="col">${{ item.price }}</div>
+                <div class="col">{{ item.quantity }}</div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- JavaScript for live search -->
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const input = document.getElementById("search-input");
+        const table = document.getElementById("inventory-table");
+
+        if (!input || !table) {
+            console.error("Search input or inventory table not found.");
+            return;
+        }
+
+        input.addEventListener("input", () => {
+            console.log("Typing:", input.value);  // ✅ See this in DevTools
+
+            fetch(`/search_inventory?q=${encodeURIComponent(input.value)}`)
+                .then(response => response.json())
+                .then(data => {
+                    let html = "";
+
+                    data.forEach(item => {
+                        html += `
+                            <div class="row py-2 border-bottom">
+                                <div class="col">${item.Id}</div>
+                                <div class="col">${item.Category}</div>
+                                <div class="col">${item.Name}</div>
+                                <div class="col">$${item.Price}</div>
+                                <div class="col">${item.Quantity}</div>
+                            </div>
+                        `;
+                    });
+
+                    if (data.length === 0) {
+                        html = `<div class="text-muted mt-3">No results found.</div>`;
+                    }
+
+                    table.innerHTML = html;
+                })
+                .catch(error => console.error("Fetch error:", error));
+        });
+    });
+</script>
+
+{% endblock %}
