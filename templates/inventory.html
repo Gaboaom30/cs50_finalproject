@@ -49,7 +49,7 @@
             return;
         }
 
-        input.addEventListener("input", () => {
+        input.addEventListener("input", function() {
             console.log("Typing:", input.value);  // ✅ See this in DevTools
 
             fetch(`/search_inventory?q=${encodeURIComponent(input.value)}`)

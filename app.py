@@ -54,13 +54,97 @@ def search_inventory():
         "SELECT * FROM inventory WHERE name LIKE ? OR id LIKE ?",
         (f"%{query}%", f"%{query}%")
     ).fetchall()
-
-    # Print what you're returning
     data = [dict(row) for row in results]
-    print("Returned JSON:", data)
-
     return jsonify(data)
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    
+    if request.method == "POST":
+        typem = request.form.get("typem")
+        if not typem:
+            flash("Please select a type.")
+            return redirect("/register")
+        if typem not in ["sale", "purcharse", "return", "output"]:
+            flash("Invalid type selected.")
+            return redirect("/register")
+        code = request.form.get("code")
+        if not code:
+            flash("Please enter a code.")
+            return redirect("/register")
+        
+        name = request.form.get("name")
+        if not name:
+            flash("Please enter a name.")
+            return redirect("/register")
+        
+        qty = request.form.get("qty")
+        if not qty:
+            flash("Please enter a quantity.")
+            return redirect("/register")
+        try:
+            qty = int(qty)
+        except ValueError:
+            flash("Quantity must be a number.")
+            return redirect("/register")
+        if qty < 0:
+            flash("Quantity must be a positive number.")
+            return redirect("/register")
+        
+        price = request.form.get("price")
+        if not price:
+            flash("Please enter a price.")
+            return redirect("/register")
+        try:
+            price = float(price)
+        except ValueError:
+            flash("Price must be a number.")
+            return redirect("/register")
+        if price < 0:
+            flash("Price must be a positive number.")
+            return redirect("/register")
+        status = request.form.get("status")
+        if not status:
+            flash("Please select a status.")
+            return redirect("/register")
+        if status not in ["delivered", "to deliver"]:
+            flash("Invalid status selected.")
+            return redirect("/register")
+        note = request.form.get("note")
+        if not note:
+            flash("Please enter a note.")
+            return redirect("/register")
+        
+        total = price * qty
+
+        movements = [
+        {"typem": typem, "code": code, "name": name, "qty": qty,
+        "price": price, "total": total, "note": note, "status": status}]
+
+        if "draft_movements" not in session:
+            session["draft_movements"] = []
+
+        draft = session["draft_movements"]
+        draft.append(movement)
+        session["draft_movements"] = draft
+
+        if "draft_payments" not in session:
+            session["draft_payments"] = {}
+
+        payments = session["draft_payments"]
+
+        if method in payments:
+            payments[method] += amount
+        else:
+            payments[method] = amount
+
+        flash("Item added to draft.")        
+
+        return redirect("/register")
+    else:
+        db = get_db()
+
+        return render_template("register.html")
 
 if __name__ == "__main__":
     app.run(debug=True)
