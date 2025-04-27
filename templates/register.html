@@ -6,13 +6,23 @@
 
 {% block h1 %}
     <h1>Register</h1>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="alert alert-warning" role="alert">
+      {% for message in messages %}
+        <div>{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 {% endblock %}
 
 {% block main %}
 <div class="container">
     <form class="row gy-2 gx-3 justify-content-center align-items-center" action="/register" method="POST">
-        <div class="col-auto">
-            <label class="visually-hidden" for="autoSizingSelect">Type</label>
+        <div class="col-2">
             <select class="form-select" name ="typem" id="type_m">
                 <option value="sale" selected>Sale</option>
                 <option value="purcharse">Pucharse</option>
@@ -20,70 +30,69 @@
                 <option value="Output">Output</option>
             </select>
             </div>
-        <div class="col-auto">
-        <label class="visually-hidden" for="autoSizingInput">Code</label>
+        <div class="col-2">
         <input type="text" name="code" id="codeInput" class="form-control" placeholder="Code">
         </div>
-        <div class="col-auto">
-            <label class="visually-hidden" for="autoSizingInput">Name</label>
+        <div class="col-4">
             <input type="text" name="search_name" id="nameInput" class="form-control" placeholder="Name">
             <div id="autocomplete-list" class="list-group position-absolute w-40" style="z-index: 10;"></div>
         </div>
-        <div class="col-auto">
-            <label class="visually-hidden" for="autoSizingInput">Quantity</label>
-            <input type="number" name="qty" class="form-control" value ="1" id="autoSizingInput" placeholder="Qty">
+        <div class="col-1">
+            <input type="number" name="qty" class="form-control" value ="1" id="qtyInput" placeholder="Qty">
         </div>
-        <div class="col-auto">
-            <label class="visually-hidden" for="autoSizingInput">Price</label>
+        <div class="col-1">
             <input type="number" name="price" id="priceInput" class="form-control" placeholder="Price">
         </div>
-        <div class="col-auto">
-            <label class="visually-hidden" for="autoSizingInput">Code</label>
-            <input type="text" name="code" id="noteInput" class="form-control" placeholder="Note">
+        <div class="col-2">
+            <input type="text" name="note" id="noteInput" class="form-control" placeholder="Note">
             </div>
-        <div class="col-auto">
-        <label class="visually-hidden" for="autoSizingSelect">Payment Method</label>
-        <select class="form-select" id="autoSizingSelect">
+        <div class="col-2">
+        <select class="form-select" name="pm" id="pmSelect">
             <option selected disabled>Payment method</option>
-            <option value="1">One</option>
-            <option value="2">Two</option>
-            <option value="3">Three</option>
+            {% for currency in pm %}
+                <option value="{{ currency['name'] }}">{{ currency['name'] }}</option>
+            {% endfor %}
         </select>
         </div>
-        <div class="col-auto">
-            <label class="visually-hidden" for="autoSizingSelect">Payment Method</label>
-            <select name ="status" class="form-select" id="autoSizingSelect">
+        <div class="col-2">
+            <select name ="status" class="form-select" id="statusSelect">
                 <option selected disabled>Status</option>
-                <option value="Delivered">Delivered</option>
+                <option value="delivered">Delivered</option>
                 <option value="to deliver">To deliver</option>
             </select>
-            </div>
+        </div>
         <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Add</button>
+            <button type="submit" class="btn btn-primary">Add</button>
         </div>
     </form>
 </div>
-{% if session["draft_movements"] %}
-    <div class="container text-center">
-        <div class="row">
-            <div class="col"><strong>Type</strong></div>
-            <div class="col"><strong>Code</strong></div>
-            <div class="col"><Strong>Name</Strong></div>
-            <div class="col"><strong>Qty</strong></div>
-            <div class="col"><strong>Price</strong></div>
-            <div class="col"><strong>Total</strong></div>
-            <div class="col"><strong>Note</strong></div>
+{% if session.get("draft_movements") %}
+    <div class="container text-center mt-5">
+        <div class="row" style="margin-bottom: 20px;">
+            <div class="col-1"><strong>Type</strong></div>
+            <div class="col-2"><strong>Code</strong></div>
+            <div class="col-4"><Strong>Name</Strong></div>
+            <div class="col-1"><strong>Qty</strong></div>
+            <div class="col-1"><strong>Price</strong></div>
+            <div class="col-1"><strong>Total</strong></div>
+            <div class="col-1"><strong>Note</strong></div>
+            <div class="col-1"><strong>Action</strong></div>
         </div>
-        {% for movement in sesssion["draft_movements"] %}
-            <div class="row">
-                <div class="col">{{ movement["type"] }}</div>
-                <div class="col">{{ movement["code"] }}</div>
-                <div class="col">{{ movement["name"] }}</div>
-                <div class="col">{{ movement["qty"] }}</div>
-                <div class="col">{{ movement["price"] }}</div>
-                <div class="col">{{ movement["total"] }}</div>
-                <div class="col">{{ movement["note"] }}</div>
-                <div class="col"><button>Delete</button></div>
+        {% for movement in session["draft_movements"] %}
+            <div class="row align-items-center " style="margin-bottom: 20px;">
+                <div class="col-1 small">{{ movement["typem"] }}</div>
+                <div class="col-2 small">{{ movement["code"] }}</div>
+                <div class="col-4 small">{{ movement["name"] }}</div>
+                <div class="col-1 small">{{ movement["qty"] }}</div>
+                <div class="col-1 small">{{ movement["price"] }}</div>
+                <div class="col-1 small">{{ movement["total"] }}</div>
+                <div class="col-1 small">{{ movement["note"] }}</div>
+                <div class="col-1 small">
+                    <form action="/delete_movement" method="POST">
+                        <input type="hidden" name="index" value="{{ loop.index0 }}">
+                        <button type="submit" class="btn btn-outline-dark btn-sm">Delete</button>
+                    </form>
+                </div>
             </div>
         {% endfor %}
     </div>

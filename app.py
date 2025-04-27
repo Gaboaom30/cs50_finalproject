@@ -73,7 +73,7 @@ def register():
             flash("Please enter a code.")
             return redirect("/register")
         
-        name = request.form.get("name")
+        name = request.form.get("search_name")
         if not name:
             flash("Please enter a name.")
             return redirect("/register")
@@ -111,15 +111,26 @@ def register():
             flash("Invalid status selected.")
             return redirect("/register")
         note = request.form.get("note")
-        if not note:
-            flash("Please enter a note.")
+
+        pm = request.form.get("pm")
+        if not pm:
+            flash("Please select a payment method.")
             return redirect("/register")
-        
+
         total = price * qty
 
-        movements = [
-        {"typem": typem, "code": code, "name": name, "qty": qty,
-        "price": price, "total": total, "note": note, "status": status}]
+        movement ={
+            "typem": typem,
+            "code": code,
+            "name": name,
+            "qty": qty,
+
+            "price": price,
+            "total": total,
+            "note": note,
+            "status": status,
+            "pm": pm
+        }
 
         if "draft_movements" not in session:
             session["draft_movements"] = []
@@ -127,24 +138,30 @@ def register():
         draft = session["draft_movements"]
         draft.append(movement)
         session["draft_movements"] = draft
+        print("Current draft_movements:", session.get("draft_movements"))
 
-        if "draft_payments" not in session:
-            session["draft_payments"] = {}
-
-        payments = session["draft_payments"]
-
-        if method in payments:
-            payments[method] += amount
-        else:
-            payments[method] = amount
-
-        flash("Item added to draft.")        
-
+     
         return redirect("/register")
     else:
         db = get_db()
+        pm = db.execute("SELECT name FROM currencies").fetchall()
+        return render_template("register.html", pm=pm)
 
-        return render_template("register.html")
+@app.route("/delete_movement", methods=["POST"])
+def delete_movement():
+    index = int(request.form.get("index"))
+
+    if "draft_movements" in session:
+        drafts = session["draft_movements"]
+
+        if 0 <= index < len(drafts):
+            drafts.pop(index)
+            session["draft_movements"] = drafts  # reassign to trigger update
+            flash("Movement deleted.")
+        else:
+            flash("Invalid movement index.")
+
+    return redirect("/register")
 
 if __name__ == "__main__":
     app.run(debug=True)
