@@ -52,7 +52,12 @@
             {% for currency in pm %}
                 <option value="{{ currency['name'] }}">{{ currency['name'] }}</option>
             {% endfor %}
+            <option value="multiple">Multiple payment methods</option>
         </select>
+            <div id="multi-payment-form" class="container mt-3" style="display: none;">
+                <div id="multi-payments-list"></div>
+                <button type="button" id="add-payment-btn" class="btn btn-secondary btn-sm mt-2">Add Payment</button>
+            </div>
         </div>
         <div class="col-2">
             <select name ="status" class="form-select" id="statusSelect">
@@ -60,6 +65,7 @@
                 <option value="delivered">Delivered</option>
                 <option value="to deliver">To deliver</option>
             </select>
+
         </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-primary">Add</button>
@@ -97,6 +103,23 @@
         {% endfor %}
     </div>
 {% endif %}
+
+{% if session.get("pm_movements") %}
+    <div class="container text-center mt-5">
+        {% for method, amount in grouped_pm.items() %}
+            <div class="row align-items-center" style="margin-bottom: 20px;">
+                <div class="col-1 small"><strong>{{ method }}</strong></div>
+                <div class="col-1 small"><strong>{{ "%.2f"|format(amount) }}</strong></div>
+            </div>
+        {% endfor %}
+        {% set total_payment = grouped_pm.values() | sum %}
+        <div class="row fw-bold border-top pt-2 mt-2">
+            <div class="col-1 small">Total</div>
+            <div class="col-1 small">${{ "%.2f"|format(total_payment) }}</div>
+        </div>
+    </div>
+{% endif %}
+
   <script>
     document.addEventListener("DOMContentLoaded", () => {
         const input = document.querySelector('[name="search_name"]');
@@ -146,6 +169,45 @@
                 list.innerHTML = "";
             }
         });
+        const pmSelect = document.getElementById("pmSelect");
+        const multiForm = document.getElementById("multi-payment-form");
+        const paymentsList = document.getElementById("multi-payments-list");
+        const addPaymentBtn = document.getElementById("add-payment-btn");
+
+        document.getElementById("pmSelect").addEventListener("change", function() {
+            const selectedValue = this.value;
+            if (selectedValue === "multiple") {
+                document.getElementById("multi-payment-form").style.display = "block";
+            } else { 
+                document.getElementById("multi-payment-form").style.display = "none";
+                paymentsList.innerHTML = ""; // reset if changing back
+            }
+        });
+        addPaymentBtn.addEventListener("click", () => {
+        const div = document.createElement("div");
+        div.classList.add("row", "g-2", "align-items-center", "mb-2");
+        div.innerHTML = `
+            <div class="col">
+                <select class="form-select payment-method" name="payment_method[]">
+                    {% for currency in pm %}
+                        <option value="{{ currency['name'] }}">{{ currency['name'] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col">
+                <input type="number" name="payment_amount[]" class="form-control payment-amount" placeholder="Amount" step="0.01">
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger btn-sm remove-payment-btn">&times;</button>
+            </div>
+        `;
+
+        paymentsList.appendChild(div);
+
+        div.querySelector(".remove-payment-btn").addEventListener("click", () => {
+            div.remove();
+        });
+    });
     });
     </script>
     

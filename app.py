@@ -61,6 +61,12 @@ def search_inventory():
 def register():
     
     if request.method == "POST":
+
+        if "current_group_id" not in session:
+            session["current_group_id"] = 0  # first time starting
+
+        group_id = session["current_group_id"]
+
         typem = request.form.get("typem")
         if not typem:
             flash("Please select a type.")
@@ -111,25 +117,50 @@ def register():
             flash("Invalid status selected.")
             return redirect("/register")
         note = request.form.get("note")
-
-        pm = request.form.get("pm")
-        if not pm:
-            flash("Please select a payment method.")
-            return redirect("/register")
-
         total = price * qty
+
+        if "pm_movements" not in session:
+            session["pm_movements"] = []
+
+        methods = request.form.getlist("payment_method[]")
+        amounts = request.form.getlist("payment_amount[]")
+
+        if methods and amounts:
+            new_pm_movements = []
+            total_amount = 0
+            for method, amount in zip(methods, amounts):
+                new_pm_movements.append({
+                    "pm_id": group_id,
+                    "method": method,
+                    "amount": float(amount)
+                })
+                total_amount += float(amount)
+
+            if abs(total_amount - total) > 0.01:
+                flash("Total amount does not match the total price.")
+                return redirect("/register")
+            
+            session["pm_movements"].extend(new_pm_movements)
+            
+        else:
+        # fallback to single pm
+            pm = request.form.get("pm")
+            session["pm_movements"].append({
+                "pm_id": group_id,
+                "method": pm,
+                "amount": total
+            })
 
         movement ={
             "typem": typem,
             "code": code,
             "name": name,
             "qty": qty,
-
             "price": price,
             "total": total,
             "note": note,
             "status": status,
-            "pm": pm
+            "pm_id": group_id
         }
 
         if "draft_movements" not in session:
@@ -139,13 +170,28 @@ def register():
         draft.append(movement)
         session["draft_movements"] = draft
         print("Current draft_movements:", session.get("draft_movements"))
-
-     
+        
+        session["current_group_id"] += 1
+        session.modified = True
+        
         return redirect("/register")
+    
     else:
         db = get_db()
         pm = db.execute("SELECT name FROM currencies").fetchall()
-        return render_template("register.html", pm=pm)
+
+        grouped_pm = {}
+        if "pm_movements" in session:
+            for payment in session["pm_movements"]:
+                method = payment["method"]
+                amount = payment["amount"]
+                if method in grouped_pm:
+                    grouped_pm[method] += amount
+                else:
+                    grouped_pm[method] = amount
+
+
+        return render_template("register.html", pm=pm, grouped_pm=grouped_pm)
 
 @app.route("/delete_movement", methods=["POST"])
 def delete_movement():
@@ -155,13 +201,34 @@ def delete_movement():
         drafts = session["draft_movements"]
 
         if 0 <= index < len(drafts):
+            # Get the pm_id before popping
+            pm_id_to_delete = drafts[index]["pm_id"]
+
+            # Remove the movement
             drafts.pop(index)
-            session["draft_movements"] = drafts  # reassign to trigger update
-            flash("Movement deleted.")
+            session["draft_movements"] = drafts
+
+            # Also remove related payment methods
+            if "pm_movements" in session:
+                payments = session["pm_movements"]
+                # Keep only payments not matching the pm_id
+                payments = [payment for payment in payments if payment["pm_id"] != pm_id_to_delete]
+                session["pm_movements"] = payments
+
+            flash("Movement and related payments deleted.")
         else:
             flash("Invalid movement index.")
 
     return redirect("/register")
+
+
+@app.route("/clear_drafts")
+def clear_drafts():
+    session.pop("draft_movements", None)
+    session.pop("pm_movements", None)
+    flash("Drafts cleared!")
+    return redirect("/register")
+
 
 if __name__ == "__main__":
     app.run(debug=True)
