@@ -26,8 +26,8 @@
             <select class="form-select" name ="typem" id="type_m">
                 <option value="sale" selected>Sale</option>
                 <option value="purcharse">Pucharse</option>
-                <option value="Return">Return</option>
-                <option value="Output">Output</option>
+                <option value="return">Return</option>
+                <option value="output">Output</option>
             </select>
             </div>
         <div class="col-2">
@@ -37,10 +37,10 @@
             <input type="text" name="search_name" id="nameInput" class="form-control" placeholder="Name">
             <div id="autocomplete-list" class="list-group position-absolute w-40" style="z-index: 10;"></div>
         </div>
-        <div class="col-1">
+        <div class="col-2">
             <input type="number" name="qty" class="form-control" value ="1" id="qtyInput" placeholder="Qty">
         </div>
-        <div class="col-1">
+        <div class="col-2">
             <input type="number" name="price" id="priceInput" class="form-control" placeholder="Price">
         </div>
         <div class="col-2">
@@ -61,8 +61,7 @@
         </div>
         <div class="col-2">
             <select name ="status" class="form-select" id="statusSelect">
-                <option selected disabled>Status</option>
-                <option value="delivered">Delivered</option>
+                <option selected value="delivered">Delivered</option>
                 <option value="to deliver">To deliver</option>
             </select>
 
@@ -118,7 +117,12 @@
             <div class="col-1 small">${{ "%.2f"|format(total_payment) }}</div>
         </div>
     </div>
+    <form action="/confirm" method="POST" class="text-center mt-3">
+        <button type="submit" class="btn btn-success">Confirm All</button>
+    </form>
+    
 {% endif %}
+
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -187,14 +191,14 @@
         const div = document.createElement("div");
         div.classList.add("row", "g-2", "align-items-center", "mb-2");
         div.innerHTML = `
-            <div class="col">
+            <div class="col-4">
                 <select class="form-select payment-method" name="payment_method[]">
                     {% for currency in pm %}
                         <option value="{{ currency['name'] }}">{{ currency['name'] }}</option>
                     {% endfor %}
                 </select>
             </div>
-            <div class="col">
+            <div class="col-4">
                 <input type="number" name="payment_amount[]" class="form-control payment-amount" placeholder="Amount" step="0.01">
             </div>
             <div class="col-auto">

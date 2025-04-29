@@ -78,7 +78,13 @@ def register():
         if not code:
             flash("Please enter a code.")
             return redirect("/register")
+
         
+        check_0 = db.execute("SELECT quantity FROM inventory WHERE id = ?", (code,)).fetchone()
+        if check_0 is None or check_0[0] < 1:
+            flash("Product not found or out of stock.")
+            return redirect("/register")
+
         name = request.form.get("search_name")
         if not name:
             flash("Please enter a name.")
@@ -118,6 +124,10 @@ def register():
             return redirect("/register")
         note = request.form.get("note")
         total = price * qty
+
+        if typem == "pucharse" or typem == "return":
+            total = -total
+        
 
         if "pm_movements" not in session:
             session["pm_movements"] = []
@@ -229,6 +239,79 @@ def clear_drafts():
     flash("Drafts cleared!")
     return redirect("/register")
 
+@app.route("/confirm", methods=["POST"])
+def confirm():
+    if "draft_movements" not in session or not session["draft_movements"]:
+        flash("No movements to confirm.")
+        return redirect("/register")
+
+    db = get_db()
+    drafts = session["draft_movements"]
+    pm_movements = session.get("pm_movements", [])
+
+    last_doc = db.execute("SELECT MAX(document_id) FROM inventory_movements").fetchone()[0]
+    if last_doc is None:
+        document_id = 1
+    else:
+        document_id = last_doc + 1
+
+    for movement in drafts:
+        db.execute(
+            "INSERT INTO inventory_movements (type, name, product_id, units, price, toal, note, status, draft_id, date, document_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (movement["typem"], movement["name"], movement["code"],
+            movement["qty"], movement["price"], movement["total"],
+            movement["note"], movement["status"],
+            movement["pm_id"], datetime.datetime.now(),
+            document_id)
+        )
+        operation = -1
+        if movement["typem"] in ["pucharse", "return"]:
+            operation = 1
+        db.execute(
+            "UPDATE inventory SET Quantity = Quantity - ? WHERE id = ?",
+            (operation * movement["qty"], movement["code"])
+        )
+            
+    for payment in pm_movements:
+        payment_method_id = db.execute("SELECT id FROM currencies WHERE name = ?", (payment["method"],)).fetchone()
+        
+        if payment_method_id:
+            payment_method_id = payment_method_id[0]
+        else:
+            flash("Payment method not found.")
+            return redirect("/register")
+       
+        db.execute(
+            "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)",
+            (payment["method"], payment["amount"],
+            payment["pm_id"], datetime.datetime.now(), document_id, payment_method_id)
+        )
+            
+            
+        # Find the matching movement by pm_id
+        related_movement = next((m for m in drafts if m["pm_id"] == payment["pm_id"]), None)
+
+        if not related_movement:
+            flash("Could not find related movement for payment.")
+            return redirect("/register")
+
+        movement_type = related_movement["typem"]
+
+        # Apply the correct logic based on movement type
+        operation = 1
+        if movement_type in ["pucharse", "return"]:
+            operation = -1
+        db.execute(
+            "UPDATE currencies SET balance = balance + ? WHERE name = ?",
+            (operation * payment["amount"], payment["method"])
+        )
+
+    db.commit()
+    session.pop("draft_movements", None)
+    session.pop("pm_movements", None)
+    flash("Movements confirmed!")
+    
+    return redirect("/register")
 
 if __name__ == "__main__":
     app.run(debug=True)
