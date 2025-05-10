@@ -38,7 +38,19 @@ def close_db(error):
 
 @app.route("/")
 def index():
-    return render_template("layout.html")
+    db = get_db()
+    cd = db.execute(" SELECT inventory_movements.id AS movement_id, inventory_movements.draft_id as draft_id, inventory_movements.document_id, inventory_movements.draft_id, inventory_movements.name AS name, inventory_movements.units AS units, inventory_movements.toal AS amount FROM inventory_movements JOIN currencies_movements  ON inventory_movements.document_id = currencies_movements.document_id AND inventory_movements.draft_id = currencies_movements.draft_id JOIN currencies ON currencies.id = currencies_movements.payment_method_id WHERE inventory_movements.type = 'sale' AND currencies.name = 'credit';").fetchall()
+    if request.method == "POST":
+        document_id = request.form.get("document_id")
+        draft_id = request.form.get("draft_id")
+        if document_id and draft_id:
+            db.execute("UPDATE inventory_movements SET FROM inventory_movements WHERE document_id = ? AND draft_id = ?", (document_id, draft_id))
+            db.execute("DELETE FROM currencies_movements WHERE document_id = ? AND draft_id = ?", (document_id, draft_id))
+            db.commit()
+            flash("Payment registered successfully.")
+        else:
+            flash("error")
+    return render_template("index.html", cd=cd)
 
 @app.route("/inventory")
 def inventory():
@@ -61,6 +73,8 @@ def search_inventory():
 def register():
     
     if request.method == "POST":
+
+        db = get_db()
 
         if "current_group_id" not in session:
             session["current_group_id"] = 0  # first time starting
@@ -202,6 +216,18 @@ def register():
 
 
         return render_template("register.html", pm=pm, grouped_pm=grouped_pm)
+
+@app.route("/get_product_by_code")
+def get_product_by_code():
+    code = request.args.get("code")
+    if not code:
+        return jsonify({})
+    db = get_db()
+    product = db.execute("SELECT Name, Price FROM inventory WHERE Id = ?", (code,)).fetchone()
+    if product:
+        return jsonify(dict(product))
+    return jsonify({})
+
 
 @app.route("/delete_movement", methods=["POST"])
 def delete_movement():

@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block h1 %}
-    <h1>Register</h1>
+    <h1 class="text-center my-4">Register</h1>
 
 {% with messages = get_flashed_messages() %}
   {% if messages %}
@@ -21,8 +21,8 @@
 
 {% block main %}
 <div class="container">
-    <form class="row gy-2 gx-3 justify-content-center align-items-center" action="/register" method="POST">
-        <div class="col-2">
+    <form class="row gy-4 gx-3 justify-content-center align-items-center" action="/register" method="POST">
+        <div class="col-md-3">
             <select class="form-select" name ="typem" id="type_m">
                 <option value="sale" selected>Sale</option>
                 <option value="purcharse">Pucharse</option>
@@ -30,23 +30,23 @@
                 <option value="output">Output</option>
             </select>
             </div>
-        <div class="col-2">
+        <div class="col-md-3">
         <input type="text" name="code" id="codeInput" class="form-control" placeholder="Code">
         </div>
-        <div class="col-4">
+        <div class="col-md-4">
             <input type="text" name="search_name" id="nameInput" class="form-control" placeholder="Name">
             <div id="autocomplete-list" class="list-group position-absolute w-40" style="z-index: 10;"></div>
         </div>
-        <div class="col-2">
+        <div class="col-md-2">
             <input type="number" name="qty" class="form-control" value ="1" id="qtyInput" placeholder="Qty">
         </div>
-        <div class="col-2">
+        <div class="col-md-2">
             <input type="number" name="price" id="priceInput" class="form-control" placeholder="Price">
         </div>
-        <div class="col-2">
+        <div class="col-md-2">
             <input type="text" name="note" id="noteInput" class="form-control" placeholder="Note">
             </div>
-        <div class="col-2">
+        <div class="col-md-3">
         <select class="form-select" name="pm" id="pmSelect">
             <option selected disabled>Payment method</option>
             {% for currency in pm %}
@@ -59,21 +59,21 @@
                 <button type="button" id="add-payment-btn" class="btn btn-secondary btn-sm mt-2">Add Payment</button>
             </div>
         </div>
-        <div class="col-2">
+        <div class="col-md-3">
             <select name ="status" class="form-select" id="statusSelect">
                 <option selected value="delivered">Delivered</option>
                 <option value="to deliver">To deliver</option>
             </select>
 
         </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-primary">Add</button>
+        <div class="col-12 text-center mt-3">
+            <button type="submit" class="btn btn-primary btn-lg">Add</button>
         </div>
     </form>
 </div>
 {% if session.get("draft_movements") %}
-    <div class="container text-center mt-5">
-        <div class="row" style="margin-bottom: 20px;">
+    <div class="container  mt-5">
+        <div class="row fw-bold">
             <div class="col-1"><strong>Type</strong></div>
             <div class="col-2"><strong>Code</strong></div>
             <div class="col-4"><Strong>Name</Strong></div>
@@ -84,7 +84,7 @@
             <div class="col-1"><strong>Action</strong></div>
         </div>
         {% for movement in session["draft_movements"] %}
-            <div class="row align-items-center " style="margin-bottom: 20px;">
+            <div class="row align-items-center mb-3">
                 <div class="col-1 small">{{ movement["typem"] }}</div>
                 <div class="col-2 small">{{ movement["code"] }}</div>
                 <div class="col-4 small">{{ movement["name"] }}</div>
@@ -104,9 +104,9 @@
 {% endif %}
 
 {% if session.get("pm_movements") %}
-    <div class="container text-center mt-5">
+    <div class="container mt-5">
         {% for method, amount in grouped_pm.items() %}
-            <div class="row align-items-center" style="margin-bottom: 20px;">
+            <div class="row align-items-center mb-2">
                 <div class="col-1 small"><strong>{{ method }}</strong></div>
                 <div class="col-1 small"><strong>{{ "%.2f"|format(amount) }}</strong></div>
             </div>
@@ -130,7 +130,27 @@
         const list = document.getElementById("autocomplete-list");
         const codeField = document.getElementById("codeInput");
         const priceField = document.getElementById("priceInput");
+
+        
+        codeInput.addEventListener("input", () => {
+            const code = codeInput.value.trim();
     
+            if (code.length === 0) return;
+            
+    
+            fetch(`/get_product_by_code?code=${encodeURIComponent(code)}`)
+                .then(response => response.json())
+                .then(data => {
+    
+                    if (data) {
+                        input.value = data.Name;
+                        priceField.value = parseFloat(data.Price).toFixed(2);
+                    } else {
+                        input.value = "";
+                        priceField.value = "";
+                    }
+                });
+        });
         input.addEventListener("input", () => {
             const query = input.value.trim();
     

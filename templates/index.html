@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Home
+{% endblock %}
+{% block h1 %}
+    <h1>Home</h1>
+{% endblock %}
+{% block main %}
+
+<div class="container text-center mt-4">
+    <h2>Credit</h2>
+
+    <!-- Table header (static) -->
+    <div class="row fw-bold border-bottom pb-2">
+        <div class="col">Document</div>
+        <div class="col">Name</div>
+        <div class="col">Units</div>
+        <div class="col">Amount</div>
+        <div class="col">Action</div>
+    </div>
+
+    <!-- Table body (dynamic) -->
+    <div id="credit-table">
+        {% for row in cd %}
+            <div class="row py-2 border-bottom">
+                <div class="col">{{ row.movement_id }}</div>
+                <div class="col">{{ row.name }}</div>
+                <div class="col">{{ row.units }}</div>
+                <div class="col">${{ row.amount }}</div>
+                <div class="col">
+                    <form action="/index" method="POST">
+                        <input type="hidden" name="movement_id" value="{{ row.movement_id }}">
+                        <input type="hidden" name="draft_id" value="{{ row.draft_id }}">
+                        <button type="submit" class="btn btn-outline-dark btn-sm" id="registerPayment">Register Payment</button>
+                        <div id="multi-payment-form" class="container mt-3" style="display: none;">
+                            <div id="multi-payments-list"></div>
+                            <button type="button" id="add-payment-btn" class="btn btn-secondary btn-sm mt-2">Add Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const registerPayment = document.getElementById("registerPayment");
+        const multiForm = document.getElementById("multi-payment-form");
+        const paymentsList = document.getElementById("multi-payments-list");
+        const addPaymentBtn = document.getElementById("add-payment-btn");
+    
+        registerPayment.addEventListener("click", () => {
+            document.getElementById("multi-payment-form").style.display = "block";
+        });
+
+        addPaymentBtn.addEventListener("click", () => {
+            const div = document.createElement("div");
+            div.classList.add("row", "g-2", "align-items-center", "mb-2");
+            div.innerHTML = `
+                <div class="col-4">
+                    <select class="form-select payment-method" name="payment_method[]">
+                        {% for currency in pm %}
+                            <option value="{{ currency['name'] }}">{{ currency['name'] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-4">
+                    <input type="number" name="payment_amount[]" class="form-control payment-amount" placeholder="Amount" step="0.01">
+                </div>
+                <div class="col-auto">
+                    <button type="button" class="btn btn-danger btn-sm remove-payment-btn">&times;</button>
+                </div>
+            `;
+            paymentsList.appendChild(div);
+            div.querySelector(".remove-payment-btn").addEventListener("click", () => {
+                div.remove();
+            });
+        });
+    });
+</script>
+{% endblock %}
