@@ -36,21 +36,104 @@ def close_db(error):
         db.close()
 
 
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def index():
     db = get_db()
-    cd = db.execute(" SELECT inventory_movements.id AS movement_id, inventory_movements.draft_id as draft_id, inventory_movements.document_id, inventory_movements.draft_id, inventory_movements.name AS name, inventory_movements.units AS units, inventory_movements.toal AS amount FROM inventory_movements JOIN currencies_movements  ON inventory_movements.document_id = currencies_movements.document_id AND inventory_movements.draft_id = currencies_movements.draft_id JOIN currencies ON currencies.id = currencies_movements.payment_method_id WHERE inventory_movements.type = 'sale' AND currencies.name = 'credit';").fetchall()
+
+    # Fetch credit sales and available payment methods
+    cd = db.execute("""
+        SELECT 
+            inventory_movements.id AS movement_id,
+            inventory_movements.draft_id,
+            inventory_movements.document_id,
+            inventory_movements.name AS name,
+            inventory_movements.units AS units,
+            currencies_movements.amount AS amount
+        FROM inventory_movements
+        JOIN currencies_movements  
+            ON inventory_movements.document_id = currencies_movements.document_id
+            AND inventory_movements.draft_id = currencies_movements.draft_id
+        JOIN currencies 
+            ON currencies.id = currencies_movements.payment_method_id
+        WHERE inventory_movements.type = 'sale'
+        AND currencies.name = 'credit' AND currencies_movements.amount > 0;
+    """).fetchall()
+
+    pm = db.execute("SELECT * FROM currencies").fetchall()
+
+    # Handle payment form submission
     if request.method == "POST":
-        document_id = request.form.get("document_id")
+        movement_id = request.form.get("movement_id")
         draft_id = request.form.get("draft_id")
-        if document_id and draft_id:
-            db.execute("UPDATE inventory_movements SET FROM inventory_movements WHERE document_id = ? AND draft_id = ?", (document_id, draft_id))
-            db.execute("DELETE FROM currencies_movements WHERE document_id = ? AND draft_id = ?", (document_id, draft_id))
+
+        # Fetch the total amount for this movement
+        row = db.execute("SELECT toal FROM inventory_movements WHERE id = ?", (movement_id,)).fetchone()
+        if not row:
+            flash("Movement not found.")
+            return redirect("/")
+
+        total = float(row["toal"])
+
+        methods = request.form.getlist("payment_method[]")
+        amounts = request.form.getlist("payment_amount[]")
+
+        total_amount = 0
+        new_pm_movements = []
+
+        if methods and amounts and len(methods) == len(amounts):
+            for method, amount in zip(methods, amounts):
+                new_pm_movements.append({
+                    "method": method,
+                    "amount": float(amount)
+                })
+                total_amount += float(amount)
+
+            if abs(total_amount - total) > 0.01:
+                flash("Total payment does not match the movement total.")
+                return redirect("/")
+
+            # Optionally: store in session for review
+            if "pm_movements" not in session:
+                session["pm_movements"] = []
+
+            session["pm_movements"].extend(new_pm_movements)
+
+            
+            for payment in new_pm_movements:
+                payment_method_id = db.execute("SELECT id FROM currencies WHERE name = ?", (payment["method"],)).fetchone()
+                
+                if payment_method_id:
+                    payment_method_id = payment_method_id[0]
+                else:
+                    flash("Payment method not found.")
+                    return redirect("/")
+
+                db.execute(
+                    "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)",
+                    (payment["method"], payment["amount"],
+                    draft_id, datetime.datetime.now(), movement_id, payment_method_id)
+                )
+
+                # Update the balance
+                db.execute(
+                    "UPDATE currencies SET balance = balance + ? WHERE name = ?",
+                    (payment["amount"], payment["method"])
+                )
+                db.execute("UPDATE currencies_movements SET amount = amount - ? WHERE document_id = ? AND draft_id = ? AND name = 'credit'", (payment["amount"], movement_id, draft_id))
+                db.execute("UPDATE currencies SET balance = balance - ? WHERE name = 'credit'", (payment["amount"],))
             db.commit()
+
+            session.pop("pm_movements", None)  # Clear the session after processing
+
             flash("Payment registered successfully.")
+            redirect("/")
         else:
-            flash("error")
-    return render_template("index.html", cd=cd)
+            flash("Missing or invalid payment data.")
+
+    return render_template("index.html", cd=cd, pm=pm)
+
+
+
 
 @app.route("/inventory")
 def inventory():

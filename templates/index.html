@@ -5,6 +5,15 @@
 {% endblock %}
 {% block h1 %}
     <h1>Home</h1>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-warning" role="alert">
+                {% for message in messages %}
+                    <div>{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 {% endblock %}
 {% block main %}
 
@@ -29,13 +38,15 @@
                 <div class="col">{{ row.units }}</div>
                 <div class="col">${{ row.amount }}</div>
                 <div class="col">
-                    <form action="/index" method="POST">
+                    <form action="/" method="POST">
                         <input type="hidden" name="movement_id" value="{{ row.movement_id }}">
                         <input type="hidden" name="draft_id" value="{{ row.draft_id }}">
-                        <button type="submit" class="btn btn-outline-dark btn-sm" id="registerPayment">Register Payment</button>
-                        <div id="multi-payment-form" class="container mt-3" style="display: none;">
-                            <div id="multi-payments-list"></div>
-                            <button type="button" id="add-payment-btn" class="btn btn-secondary btn-sm mt-2">Add Payment</button>
+                        <button type="button" class="btn btn-outline-dark btn-sm register-payment">Register Payment</button>
+                        <div class="multi-payment-form container mt-3" style="display: none;">
+                            <div class="multi-payments-list"></div>
+                            <button type="button" class="btn btn-secondary btn-sm mt-2 add-payment-btn">Add Payment</button>
+                            <button type="submit" class="btn btn-secondary btn-sm mt-2">Confirm</button>
+                            <button type="button" class="btn btn-secondary btn-sm mt-2 cancel">Cancel</button>
                         </div>
                     </form>
                 </div>
@@ -44,14 +55,19 @@
     </div>
 </div>
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const registerPayment = document.getElementById("registerPayment");
-        const multiForm = document.getElementById("multi-payment-form");
-        const paymentsList = document.getElementById("multi-payments-list");
-        const addPaymentBtn = document.getElementById("add-payment-btn");
-    
-        registerPayment.addEventListener("click", () => {
-            document.getElementById("multi-payment-form").style.display = "block";
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("#credit-table form").forEach(form => {
+        const registerPaymentBtn = form.querySelector(".register-payment");
+        const multiForm = form.querySelector(".multi-payment-form");
+        const paymentsList = form.querySelector(".multi-payments-list");
+        const addPaymentBtn = form.querySelector(".add-payment-btn");
+        const cancel =form.querySelector(".cancel");
+
+        cancel.addEventListener("click", () => {
+            multiForm.style.display = "none";
+        });
+        registerPaymentBtn.addEventListener("click", () => {
+            multiForm.style.display = "block";
         });
 
         addPaymentBtn.addEventListener("click", () => {
@@ -73,10 +89,13 @@
                 </div>
             `;
             paymentsList.appendChild(div);
+
             div.querySelector(".remove-payment-btn").addEventListener("click", () => {
                 div.remove();
             });
         });
     });
+});
 </script>
+
 {% endblock %}
