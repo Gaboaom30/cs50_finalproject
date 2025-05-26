@@ -61,8 +61,54 @@ def index():
 
     pm = db.execute("SELECT * FROM currencies").fetchall()
 
+    delibery = db.execute("SELECT * FROM inventory_movements WHERE status = 'to deliver'").fetchall()
+
+    return render_template("index.html", cd=cd, pm=pm, delivery=delibery)
+
+
+
+
+@app.route("/inventory")
+def inventory():
+    db = get_db()
+    inv = db.execute("SELECT * FROM inventory").fetchall()
+    return render_template("inventory.html", inv=inv)
+
+@app.route("/search_inventory")
+def search_inventory():
+    db = get_db()
+    query = request.args.get("q", "").strip()
+    results = db.execute(
+        "SELECT * FROM inventory WHERE name LIKE ? OR id LIKE ?",
+        (f"%{query}%", f"%{query}%")
+    ).fetchall()
+    data = [dict(row) for row in results]
+    return jsonify(data)
+
+@app.route("/delivery", methods=["POST"])
+def delivery():
+    if request.method == "POST":
+        db = get_db()
+        draft_id = request.form.get("draft_id")
+        movement_id = request.form.get("movement_id")
+        if not draft_id or not movement_id:
+            flash("Draft ID and Movement ID are required.")
+            return redirect("/")
+        
+        # Update the status of the movement to 'delivered'
+        db.execute(
+            "UPDATE inventory_movements SET status = 'delivered' WHERE draft_id = ? AND document_id = ?",
+            (draft_id, movement_id)
+        )
+        db.commit()
+        flash("Delivery status updated successfully.")
+        return redirect("/")
+
+@app.route("/index_payment", methods=["POST"])
+def index_payment():
     # Handle payment form submission
     if request.method == "POST":
+        db = get_db()
         movement_id = request.form.get("movement_id")
         draft_id = request.form.get("draft_id")
 
@@ -88,8 +134,8 @@ def index():
                 })
                 total_amount += float(amount)
 
-            if abs(total_amount - total) > 0.01:
-                flash("Total payment does not match the movement total.")
+            if total_amount > total:
+                flash("Total payment exceeds the movement total.")
                 return redirect("/")
 
             # Optionally: store in session for review
@@ -126,32 +172,13 @@ def index():
             session.pop("pm_movements", None)  # Clear the session after processing
 
             flash("Payment registered successfully.")
-            redirect("/")
+            return redirect("/")
         else:
             flash("Missing or invalid payment data.")
-
-    return render_template("index.html", cd=cd, pm=pm)
-
+            return redirect("/")
 
 
-
-@app.route("/inventory")
-def inventory():
-    db = get_db()
-    inv = db.execute("SELECT * FROM inventory").fetchall()
-    return render_template("inventory.html", inv=inv)
-
-@app.route("/search_inventory")
-def search_inventory():
-    db = get_db()
-    query = request.args.get("q", "").strip()
-    results = db.execute(
-        "SELECT * FROM inventory WHERE name LIKE ? OR id LIKE ?",
-        (f"%{query}%", f"%{query}%")
-    ).fetchall()
-    data = [dict(row) for row in results]
-    return jsonify(data)
-
+        
 @app.route("/register", methods=["GET", "POST"])
 def register():
     
@@ -418,6 +445,7 @@ def confirm():
     db.commit()
     session.pop("draft_movements", None)
     session.pop("pm_movements", None)
+    session.pop("current_group_id", None)
     flash("Movements confirmed!")
     
     return redirect("/register")

@@ -17,28 +17,32 @@
 {% endblock %}
 {% block main %}
 
-<div class="container text-center mt-4">
-    <h2>Credit</h2>
+<div class="container text-center mb-5">
+    <h3 class="mb-5">Credit</h3>
 
     <!-- Table header (static) -->
     <div class="row fw-bold border-bottom pb-2">
-        <div class="col">Document</div>
-        <div class="col">Name</div>
-        <div class="col">Units</div>
-        <div class="col">Amount</div>
-        <div class="col">Action</div>
+        <div class="col-1 small">Document</div>
+        <div class="col-1 small">Draft_id</div>
+        <div class="col-3 small">Name</div>
+        <div class="col-1 small">Units</div>
+        <div class="col-1 small">Amount</div>
+        <div class="col small">Note</div>
+        <div class="col-3 small">Action</div>
     </div>
 
     <!-- Table body (dynamic) -->
     <div id="credit-table">
         {% for row in cd %}
             <div class="row py-2 border-bottom">
-                <div class="col">{{ row.movement_id }}</div>
-                <div class="col">{{ row.name }}</div>
-                <div class="col">{{ row.units }}</div>
-                <div class="col">${{ row.amount }}</div>
-                <div class="col">
-                    <form action="/" method="POST">
+                <div class="col-1 small">{{ row.movement_id }}</div>
+                <div class="col-1 small">{{ row.draft_id }}</div>
+                <div class="col-3 small">{{ row.name }}</div>
+                <div class="col-1 small">{{ row.units }}</div>
+                <div class="col-1 small">{{ row.amount }}</div>
+                <div class="col small">{{ row.note }}</div>
+                <div class="col-3 small">
+                    <form action="/index_payment" method="POST">
                         <input type="hidden" name="movement_id" value="{{ row.movement_id }}">
                         <input type="hidden" name="draft_id" value="{{ row.draft_id }}">
                         <button type="button" class="btn btn-outline-dark btn-sm register-payment">Register Payment</button>
@@ -53,6 +57,37 @@
             </div>
         {% endfor %}
     </div>
+</div>
+<div class="container text-center my-5">
+    <h3 class="mb-5"> To deliver</h3>
+    <!-- Table header (static) -->
+    <div class="row fw-bold border-bottom pb-2">
+        <div class="col-1 small">Document</div>
+        <div class="col-1 small">Draft_id</div>
+        <div class="col-4 small">Name</div>
+        <div class="col-1 small">Units</div>
+        <div class="col small">Note</div>
+        <div class="col-3 small">Action</div>
+    </div>
+    <!-- Table body (dynamic) -->
+    <div id="to-deliver-table">
+        {% for row in delivery %}
+            <div class="row py-2 border-bottom">
+                <div class="col-1 small">{{ row.document_id }}</div>
+                <div class="col-1 small">{{ row.draft_id }}</div>
+                <div class="col-4 small">{{ row.name }}</div>
+                <div class="col-1 small">{{ row.units }}</div>
+                <div class="col small">{{ row.note }}</div>
+                <div class="col-3 small">
+                    <form action="/delivery" method="POST">
+                        <input type="hidden" name="movement_id" value="{{ row.document_id }}">
+                        <input type="hidden" name="draft_id" value="{{ row.draft_id }}">
+                        <button type="submit" class="btn btn-outline-dark btn-sm">Deliver</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
