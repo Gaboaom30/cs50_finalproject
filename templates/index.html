@@ -82,7 +82,14 @@
                     <form action="/delivery" method="POST">
                         <input type="hidden" name="movement_id" value="{{ row.document_id }}">
                         <input type="hidden" name="draft_id" value="{{ row.draft_id }}">
-                        <button type="submit" class="btn btn-outline-dark btn-sm">Deliver</button>
+                        <button type="button" class="buttondelivery btn btn-outline-dark btn-sm">Deliver</button>
+                        <div class="delivery container mt-3" style="display: none;">
+                            <div class="notes">
+                                <input type="text" name="note" class="form-control" value="{{ row.note }}">
+                            </div>
+                            <button type="submit" class="btn btn-secondary btn-sm mt-2">Confirm</button>
+                            <button type="button" class="btn btn-secondary btn-sm mt-2 deliverycl">Cancel</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -91,12 +98,28 @@
 </div>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+    // Handle delivery button click
+    document.querySelectorAll("#to-deliver-table form").forEach(form => {
+        const deliveryBtn = form.querySelector(".buttondelivery");
+        const deliveryForm = form.querySelector(".delivery");
+        const cancel = form.querySelector(".deliverycl");
+
+        cancel.addEventListener("click", () => {
+            deliveryForm.style.display = "none";
+        });
+
+        deliveryBtn.addEventListener("click", () => {
+            deliveryForm.style.display = "block";
+            deliveryForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
     document.querySelectorAll("#credit-table form").forEach(form => {
         const registerPaymentBtn = form.querySelector(".register-payment");
         const multiForm = form.querySelector(".multi-payment-form");
         const paymentsList = form.querySelector(".multi-payments-list");
         const addPaymentBtn = form.querySelector(".add-payment-btn");
         const cancel =form.querySelector(".cancel");
+        
 
         cancel.addEventListener("click", () => {
             multiForm.style.display = "none";

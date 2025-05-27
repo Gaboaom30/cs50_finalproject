@@ -91,14 +91,17 @@ def delivery():
         db = get_db()
         draft_id = request.form.get("draft_id")
         movement_id = request.form.get("movement_id")
+        
         if not draft_id or not movement_id:
             flash("Draft ID and Movement ID are required.")
             return redirect("/")
+    
+        note = request.form.get("note", "")
         
         # Update the status of the movement to 'delivered'
         db.execute(
-            "UPDATE inventory_movements SET status = 'delivered' WHERE draft_id = ? AND document_id = ?",
-            (draft_id, movement_id)
+            "UPDATE inventory_movements SET status = 'delivered', note = ? WHERE draft_id = ? AND document_id = ?",
+            (note, draft_id, movement_id)
         )
         db.commit()
         flash("Delivery status updated successfully.")

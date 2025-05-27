@@ -22,7 +22,7 @@
 {% block main %}
 <div class="container">
     <form class="row gy-4 gx-3 justify-content-center align-items-center" action="/register" method="POST">
-        <div class="col-md-3">
+        <div class="col-md-1">
             <select class="form-select" name ="typem" id="type_m">
                 <option value="sale" selected>Sale</option>
                 <option value="purcharse">Pucharse</option>
@@ -30,21 +30,21 @@
                 <option value="output">Output</option>
             </select>
             </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
         <input type="text" name="code" id="codeInput" class="form-control" placeholder="Code">
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <input type="text" name="search_name" id="nameInput" class="form-control" placeholder="Name">
             <div id="autocomplete-list" class="list-group position-absolute w-40" style="z-index: 10;"></div>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
             <input type="number" name="qty" class="form-control" value ="1" id="qtyInput" placeholder="Qty">
         </div>
-        <div class="col-md-2">
+        <div class="col-md-1">
             <input type="number" name="price" id="priceInput" class="form-control" placeholder="Price">
         </div>
         <div class="col-md-2">
-            <input type="text" name="note" id="noteInput" class="form-control" placeholder="Note">
+            <textarea type="text" name="note" id="noteInput" class="form-control" rows="1" placeholder="Note"></textarea>
             </div>
         <div class="col-md-3">
         <select class="form-select" name="pm" id="pmSelect">
@@ -59,7 +59,7 @@
                 <button type="button" id="add-payment-btn" class="btn btn-secondary btn-sm mt-2">Add Payment</button>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-2">
             <select name ="status" class="form-select" id="statusSelect">
                 <option selected value="delivered">Delivered</option>
                 <option value="to deliver">To deliver</option>
