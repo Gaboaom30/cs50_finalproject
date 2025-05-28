@@ -74,6 +74,23 @@ def inventory():
     inv = db.execute("SELECT * FROM inventory").fetchall()
     return render_template("inventory.html", inv=inv)
 
+@app.route("/inventory_movements")
+def inventory_movements():
+    db = get_db()
+    movements = db.execute("SELECT * FROM inventory_movements").fetchall()
+    return render_template("movements.html", movements=movements)
+
+@app.route("/search_inventory_movements")
+def search_inventory_moveme():
+    db = get_db()
+    query = request.args.get("q", "").strip()
+    results = db.execute(
+        "SELECT * FROM inventory_movements WHERE name LIKE ? OR id LIKE ?",
+        (f"%{query}%", f"%{query}%")
+    ).fetchall()
+    data = [dict(row) for row in results]
+    return jsonify(data)
+
 @app.route("/search_inventory")
 def search_inventory():
     db = get_db()

@@ -16,23 +16,35 @@
     </div>
 
     <!-- Table header (static) -->
-    <div class="row fw-bold border-bottom pb-2">
-        <div class="col">Code</div>
-        <div class="col">Category</div>
-        <div class="col">Name</div>
-        <div class="col">Price</div>
-        <div class="col">Stock</div>
+    <div class="row py-2 align-items-center justify-content-center border-bottom">
+        <div class="col-1">Date</div>
+        <div class="col-1">Type</div>
+        <div class="col" style="width: 5%;">Document_id</div>
+        <div class="col" style="width: 5%;">Draft_id</div>
+        <div class="col-1">Product Id</div>
+        <div class="col-2">Name</div>     
+        <div class="col" style="width: 5%;">Units</div>
+        <div class="col" style="width: 5%;">Price</div>
+        <div class="col" style="width: 5%;">Total</div>
+        <div class="col-1">Note</div>
+        <div class="col-1">Status</div>
     </div>
 
     <!-- Table body (dynamic) -->
     <div id="inventory-table">
-        {% for item in inv %}
-            <div class="row py-2 border-bottom">
-                <div class="col">{{ item.id }}</div>
-                <div class="col">{{ item.category }}</div>
-                <div class="col">{{ item.name }}</div>
-                <div class="col">${{ item.price }}</div>
-                <div class="col">{{ item.quantity }}</div>
+        {% for item in movements %}
+            <div class="row py-2 border-bottom align-items-center justify-content-center">
+                <div class="col-1 small">{{item.date}}</div>
+                <div class="col-1 small">{{item.type}}</div>
+                <div class="col small" style="width: 5%;">{{item.document_id}}</div>
+                <div class="col small" style="width: 5%;">{{item.draft_id}}</div>
+                <div class="col-1 small">{{item.product_id}}</div>
+                <div class="col-2 small" >{{item.name}}</div>     
+                <div class="col small" style="width: 5%;">{{item.units}}</div>
+                <div class="col small" style="width: 5%;">{{item.price}}</div>
+                <div class="col small" style="width: 5%;">{{item.toal}}</div>
+                <div class="col-1 small">{{item.note}}</div>
+                <div class="col-1 small">{{item.status}}</div>
             </div>
         {% endfor %}
     </div>
@@ -52,19 +64,25 @@
         input.addEventListener("input", function() {
             console.log("Typing:", input.value);  // ✅ See this in DevTools
 
-            fetch(`/search_inventory?q=${encodeURIComponent(input.value)}`)
+            fetch(`/search_inventory_movements?q=${encodeURIComponent(input.value)}`)
                 .then(response => response.json())
                 .then(data => {
                     let html = "";
 
                     data.forEach(item => {
                         html += `
-                            <div class="row py-2 border-bottom">
-                                <div class="col">${item.Id}</div>
-                                <div class="col">${item.Category}</div>
-                                <div class="col">${item.Name}</div>
-                                <div class="col">$${item.Price}</div>
-                                <div class="col">${item.Quantity}</div>
+                            <div class="row py-2 border-bottom align-items-center justify-content-center">
+                                <div class="col-1 small">${item.date}</div>
+                                <div class="col-1 small">${item.type}</div>
+                                <div class="col small" style="width: 5%;">${item.document_id}</div>
+                                <div class="col small" style="width: 5%;">${item.draft_id}</div>
+                                <div class="col-1 small">${item.product_id}</div>
+                                <div class="col-2 small" >${item.name}</div>     
+                                <div class="col small" style="width: 5%;">${item.units}</div>
+                                <div class="col small" style="width: 5%;">${item.price}</div>
+                                <div class="col small" style="width: 5%;">${item.toal}</div>
+                                <div class="col-1 small">${item.note}</div>
+                                <div class="col-1 small">${item.status}</div>
                             </div>
                         `;
                     });
