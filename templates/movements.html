@@ -16,7 +16,7 @@
     </div>
 
     <!-- Table header (static) -->
-    <div class="row py-2  justify-content-center border-bottom">
+    <div class="row py-2 fw-bold justify-content-center border-bottom">
         <div class="col-1">Date</div>
         <div class="col-1">Type</div>
         <div class="col" style="width: 5%;">Document_id</div>
@@ -33,7 +33,7 @@
     <!-- Table body (dynamic) -->
     <div id="inventory-table">
         {% for item in movements %}
-            <div class="row resizable-row py-2 border-bottom justify-content-center" style="height: 80px">
+            <div class="row resizable-row py-2 border-bottom justify-content-center">
                 <div class="col-1 small">{{item.date}}</div>
                 <div class="col-1 small">{{item.type}}</div>
                 <div class="col small" style="width: 5%;">{{item.document_id}}</div>
@@ -55,7 +55,7 @@
  <style>
 .resizable-row {
     position: relative;
-    height: 80px;
+    height: 60px;
     transition: height 0.1s;
     overflow: hidden; /* no scrollbars */
     border-bottom: 1px solid #ccc;
@@ -75,37 +75,8 @@
 
  
 <script>
+    
     document.addEventListener("DOMContentLoaded", () => {
-
-        document.querySelectorAll('.resizable-row').forEach(row => {
-            const handle = row.querySelector('.resize-handle');
-            let isdragging = false;
-            let startY = 0;
-            let startHeight = 0;
-
-            handle.addEventListener('mousedown', (e) => {
-                isdragging = true;
-                startY = e.clientY;
-                startHeight = row.offsetHeight;
-                
-                document.body.style.userSelect = 'none'; // Prevent text selection
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isdragging) return;
-
-                const dy = e.clientY - startY;
-                row.style.height = `${startHeight + dy}px`; // Minimum height of 50px
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (isdragging) {
-                    isdragging = false;
-                    document.body.style.userSelect = ''; // Restore text selection
-                }
-            });
-        });
-
         const input = document.getElementById("search-input");
         const table = document.getElementById("inventory-table");
 
@@ -113,6 +84,8 @@
             console.error("Search input or inventory table not found.");
             return;
         }
+
+        setupResizableRows();
 
         input.addEventListener("input", function() {
             console.log("Typing:", input.value);  // ✅ See this in DevTools
@@ -124,7 +97,7 @@
 
                     data.forEach(item => {
                         html += `
-                            <div class="resizable-row row py-2 border-bottom justify-content-center" style="height: 80px">
+                            <div class="resizable-row row py-2 border-bottom justify-content-center">
                                 <div class="col-1 small">${item.date}</div>
                                 <div class="col-1 small">${item.type}</div>
                                 <div class="col small" style="width: 5%;">${item.document_id}</div>
@@ -146,6 +119,8 @@
                     }
 
                     table.innerHTML = html;
+
+                    setupResizableRows();
                 })
                 .catch(error => console.error("Fetch error:", error));
         });

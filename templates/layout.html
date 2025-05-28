@@ -47,7 +47,37 @@
     <footer class="text-center mt-5 p-3 border-top">
         <p>&copy; 2025 Gabriel Olivett</p>
     </footer>
+<script>
+  function setupResizableRows() {
 
+        document.querySelectorAll('.resizable-row').forEach(row => {
+            const handle = row.querySelector('.resize-handle');
+            let isdragging = false;
+            let startY = 0;
+            let startHeight = 0;
+            
+            handle.addEventListener('mousedown', (e) => {
+                isdragging = true;
+                startY = e.clientY;
+                startHeight = row.offsetHeight;            
+                document.body.style.userSelect = 'none'; // Prevent text selection
+                });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isdragging) return;
+                const dy = e.clientY - startY;
+                row.style.height = `${Math.max(60, startHeight + dy)}px`;// Minimum height of 50px
+                });
+
+            document.addEventListener('mouseup', () => {
+                if (isdragging) {
+                    isdragging = false;
+                    document.body.style.userSelect = ''; // Restore text selection
+                }
+            });
+        });
+    }
+</script>
 </body>
 </html>
 

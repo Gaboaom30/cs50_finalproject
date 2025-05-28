@@ -35,7 +35,7 @@
     <div id="credit-table">
         {% for row in cd %}
             <div class="row py-2 border-bottom">
-                <div class="col-1 small">{{ row.movement_id }}</div>
+                <div class="col-1 small">{{ row.document_id }}</div>
                 <div class="col-1 small">{{ row.draft_id }}</div>
                 <div class="col-3 small">{{ row.name }}</div>
                 <div class="col-1 small">{{ row.units }}</div>
@@ -43,8 +43,9 @@
                 <div class="col small">{{ row.note }}</div>
                 <div class="col-3 small">
                     <form action="/index_payment" method="POST">
-                        <input type="hidden" name="movement_id" value="{{ row.movement_id }}">
+                        <input type="hidden" name="movement_id" value="{{ row.document_id }}">
                         <input type="hidden" name="draft_id" value="{{ row.draft_id }}">
+                        <input type="hidden" name="amount" value="{{ row.amount }}">
                         <button type="button" class="btn btn-outline-dark btn-sm register-payment">Register Payment</button>
                         <div class="multi-payment-form container mt-3" style="display: none;">
                             <div class="multi-payments-list"></div>
@@ -85,7 +86,7 @@
                         <button type="button" class="buttondelivery btn btn-outline-dark btn-sm">Deliver</button>
                         <div class="delivery container mt-3" style="display: none;">
                             <div class="notes">
-                                <input type="text" name="note" class="form-control" value="{{ row.note }}">
+                                <textarea type="text" name="note" class="form-control">{{ row.note }}</textarea>
                             </div>
                             <button type="submit" class="btn btn-secondary btn-sm mt-2">Confirm</button>
                             <button type="button" class="btn btn-secondary btn-sm mt-2 deliverycl">Cancel</button>

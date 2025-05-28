@@ -45,7 +45,7 @@ def index():
         SELECT 
             inventory_movements.id AS movement_id,
             inventory_movements.draft_id,
-            inventory_movements.document_id,
+            inventory_movements.document_id as document_id,
             inventory_movements.name AS name,
             inventory_movements.units AS units,
             currencies_movements.amount AS amount
@@ -77,19 +77,8 @@ def inventory():
 @app.route("/inventory_movements")
 def inventory_movements():
     db = get_db()
-    movements = db.execute("SELECT * FROM inventory_movements ORDER BY document_id DESC").fetchall()
+    movements = db.execute("SELECT * FROM inventory_movements ORDER BY date DESC").fetchall()
     return render_template("movements.html", movements=movements)
-
-@app.route("/search_inventory_movements")
-def search_inventory_moveme():
-    db = get_db()
-    query = request.args.get("q", "").strip()
-    results = db.execute(
-        "SELECT * FROM inventory_movements WHERE name LIKE ? OR product_id LIKE ? ORDER BY date DESC",
-        (f"%{query}%", f"%{query}%")
-    ).fetchall()
-    data = [dict(row) for row in results]
-    return jsonify(data)
 
 @app.route("/search_inventory")
 def search_inventory():
@@ -108,17 +97,14 @@ def delivery():
         db = get_db()
         draft_id = request.form.get("draft_id")
         movement_id = request.form.get("movement_id")
-        
         if not draft_id or not movement_id:
             flash("Draft ID and Movement ID are required.")
             return redirect("/")
-    
-        note = request.form.get("note", "")
         
         # Update the status of the movement to 'delivered'
         db.execute(
-            "UPDATE inventory_movements SET status = 'delivered', note = ? WHERE draft_id = ? AND document_id = ?",
-            (note, draft_id, movement_id)
+            "UPDATE inventory_movements SET status = 'delivered' WHERE draft_id = ? AND document_id = ?",
+            (draft_id, movement_id)
         )
         db.commit()
         flash("Delivery status updated successfully.")
@@ -131,14 +117,18 @@ def index_payment():
         db = get_db()
         movement_id = request.form.get("movement_id")
         draft_id = request.form.get("draft_id")
-
+        topay = request.form.get("amount")
         # Fetch the total amount for this movement
-        row = db.execute("SELECT toal FROM inventory_movements WHERE id = ?", (movement_id,)).fetchone()
-        if not row:
-            flash("Movement not found.")
+    
+        if not topay:
+            flash("Amount not provided.")
             return redirect("/")
 
-        total = float(row["toal"])
+        try:
+            total = float(topay)
+        except ValueError:
+            flash("Invalid amount.")
+            return redirect("/")
 
         methods = request.form.getlist("payment_method[]")
         amounts = request.form.getlist("payment_amount[]")
@@ -269,8 +259,8 @@ def register():
         note = request.form.get("note")
         total = price * qty
 
-        if typem == "pucharse" or typem == "return":
-            total = -total
+        if typem == "purchase" or typem == "return":
+            total = -(total)
         
 
         if "pm_movements" not in session:
@@ -283,6 +273,22 @@ def register():
             new_pm_movements = []
             total_amount = 0
             for method, amount in zip(methods, amounts):
+
+                if not method or not amount:
+                    flash("Please provide both payment method and amount.")
+                    return redirect("/register")
+                try:
+                    amount = float(amount)
+                except ValueError:
+                    flash("Invalid amount provided.")
+                    return redirect("/register")
+                if amount < 0:
+                    flash("Amount must be a positive number.")
+                    return redirect("/register")
+                if amount > total:
+                    flash("Payment amount cannot exceed the total price.")
+                    return redirect("/register")
+                
                 new_pm_movements.append({
                     "pm_id": group_id,
                     "method": method,
@@ -299,6 +305,11 @@ def register():
         else:
         # fallback to single pm
             pm = request.form.get("pm")
+
+            if not pm:
+                flash("Please select a payment method.")
+                return redirect("/register")
+
             session["pm_movements"].append({
                 "pm_id": group_id,
                 "method": pm,
@@ -412,6 +423,10 @@ def confirm():
         document_id = last_doc + 1
 
     for movement in drafts:
+        qty = db.execute("SELECT Quantity FROM inventory WHERE id = ?", (movement["code"],)).fetchone()
+        if qty is None or qty[0] < movement["qty"]:
+            flash(f"Not enough stock for product {movement['name']} (Code: {movement['code']}).")
+            return redirect("/register")
         db.execute(
             "INSERT INTO inventory_movements (type, name, product_id, units, price, toal, note, status, draft_id, date, document_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (movement["typem"], movement["name"], movement["code"],
@@ -424,7 +439,7 @@ def confirm():
         if movement["typem"] in ["pucharse", "return"]:
             operation = 1
         db.execute(
-            "UPDATE inventory SET Quantity = Quantity - ? WHERE id = ?",
+            "UPDATE inventory SET Quantity = Quantity + ? WHERE id = ?",
             (operation * movement["qty"], movement["code"])
         )
             
