@@ -16,7 +16,7 @@
     </div>
 
     <!-- Table header (static) -->
-    <div class="row py-2 align-items-center justify-content-center border-bottom">
+    <div class="row py-2  justify-content-center border-bottom">
         <div class="col-1">Date</div>
         <div class="col-1">Type</div>
         <div class="col" style="width: 5%;">Document_id</div>
@@ -33,26 +33,79 @@
     <!-- Table body (dynamic) -->
     <div id="inventory-table">
         {% for item in movements %}
-            <div class="row py-2 border-bottom align-items-center justify-content-center">
+            <div class="row resizable-row py-2 border-bottom justify-content-center" style="height: 80px">
                 <div class="col-1 small">{{item.date}}</div>
                 <div class="col-1 small">{{item.type}}</div>
                 <div class="col small" style="width: 5%;">{{item.document_id}}</div>
                 <div class="col small" style="width: 5%;">{{item.draft_id}}</div>
                 <div class="col-1 small">{{item.product_id}}</div>
                 <div class="col-2 small" >{{item.name}}</div>     
-                <div class="col small" style="width: 5%;">{{item.units}}</div>
+                <div class="col small" style="width: 5%;">{{item.Units}}</div>
                 <div class="col small" style="width: 5%;">{{item.price}}</div>
                 <div class="col small" style="width: 5%;">{{item.toal}}</div>
                 <div class="col-1 small">{{item.note}}</div>
                 <div class="col-1 small">{{item.status}}</div>
+                <div class="resize-handle"></div>
             </div>
         {% endfor %}
     </div>
 </div>
 
 <!-- JavaScript for live search -->
+ <style>
+.resizable-row {
+    position: relative;
+    height: 80px;
+    transition: height 0.1s;
+    overflow: hidden; /* no scrollbars */
+    border-bottom: 1px solid #ccc;
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 5px;
+    width: 100%;
+    cursor: row-resize;
+    background-color: transparent;
+    z-index: 1;
+}
+</style>
+
+ 
 <script>
     document.addEventListener("DOMContentLoaded", () => {
+
+        document.querySelectorAll('.resizable-row').forEach(row => {
+            const handle = row.querySelector('.resize-handle');
+            let isdragging = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            handle.addEventListener('mousedown', (e) => {
+                isdragging = true;
+                startY = e.clientY;
+                startHeight = row.offsetHeight;
+                
+                document.body.style.userSelect = 'none'; // Prevent text selection
+            });
+
+            document.addEventListener('mousemove', (e) => {
+                if (!isdragging) return;
+
+                const dy = e.clientY - startY;
+                row.style.height = `${startHeight + dy}px`; // Minimum height of 50px
+            });
+
+            document.addEventListener('mouseup', () => {
+                if (isdragging) {
+                    isdragging = false;
+                    document.body.style.userSelect = ''; // Restore text selection
+                }
+            });
+        });
+
         const input = document.getElementById("search-input");
         const table = document.getElementById("inventory-table");
 
@@ -71,18 +124,19 @@
 
                     data.forEach(item => {
                         html += `
-                            <div class="row py-2 border-bottom align-items-center justify-content-center">
+                            <div class="resizable-row row py-2 border-bottom justify-content-center" style="height: 80px">
                                 <div class="col-1 small">${item.date}</div>
                                 <div class="col-1 small">${item.type}</div>
                                 <div class="col small" style="width: 5%;">${item.document_id}</div>
                                 <div class="col small" style="width: 5%;">${item.draft_id}</div>
                                 <div class="col-1 small">${item.product_id}</div>
                                 <div class="col-2 small" >${item.name}</div>     
-                                <div class="col small" style="width: 5%;">${item.units}</div>
+                                <div class="col small" style="width: 5%;">${item.Units}</div>
                                 <div class="col small" style="width: 5%;">${item.price}</div>
                                 <div class="col small" style="width: 5%;">${item.toal}</div>
                                 <div class="col-1 small">${item.note}</div>
                                 <div class="col-1 small">${item.status}</div>
+                                <div class="resize-handle"></div>
                             </div>
                         `;
                     });

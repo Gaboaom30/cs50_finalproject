@@ -77,7 +77,7 @@ def inventory():
 @app.route("/inventory_movements")
 def inventory_movements():
     db = get_db()
-    movements = db.execute("SELECT * FROM inventory_movements").fetchall()
+    movements = db.execute("SELECT * FROM inventory_movements ORDER BY document_id DESC").fetchall()
     return render_template("movements.html", movements=movements)
 
 @app.route("/search_inventory_movements")
@@ -85,7 +85,7 @@ def search_inventory_moveme():
     db = get_db()
     query = request.args.get("q", "").strip()
     results = db.execute(
-        "SELECT * FROM inventory_movements WHERE name LIKE ? OR id LIKE ?",
+        "SELECT * FROM inventory_movements WHERE name LIKE ? OR product_id LIKE ? ORDER BY date DESC",
         (f"%{query}%", f"%{query}%")
     ).fetchall()
     data = [dict(row) for row in results]
@@ -215,7 +215,7 @@ def register():
         if not typem:
             flash("Please select a type.")
             return redirect("/register")
-        if typem not in ["sale", "purcharse", "return", "output"]:
+        if typem not in ["sale", "purchase", "return", "output"]:
             flash("Invalid type selected.")
             return redirect("/register")
         code = request.form.get("code")
