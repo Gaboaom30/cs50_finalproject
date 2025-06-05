@@ -96,6 +96,17 @@ def search_inventory_movements():
     db = get_db()
     query = request.args.get("q", "").strip()
     results = db.execute(
+        "SELECT * FROM inventory_movements WHERE name LIKE ? OR product_id LIKE ?",
+        (f"%{query}%", f"%{query}%")
+    ).fetchall()
+    data = [dict(row) for row in results]
+    return jsonify(data)
+
+@app.route("/search_inventory_movements")
+def search_inventory_movements():
+    db = get_db()
+    query = request.args.get("q", "").strip()
+    results = db.execute(
         "SELECT * FROM inventory_movements WHERE name LIKE ? OR id LIKE ?",
         (f"%{query}%", f"%{query}%")
     ).fetchall()
