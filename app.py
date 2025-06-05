@@ -91,6 +91,17 @@ def search_inventory():
     data = [dict(row) for row in results]
     return jsonify(data)
 
+@app.route("/search_inventory_movements")
+def search_inventory_movements():
+    db = get_db()
+    query = request.args.get("q", "").strip()
+    results = db.execute(
+        "SELECT * FROM inventory_movements WHERE name LIKE ? OR id LIKE ?",
+        (f"%{query}%", f"%{query}%")
+    ).fetchall()
+    data = [dict(row) for row in results]
+    return jsonify(data)
+
 @app.route("/delivery", methods=["POST"])
 def delivery():
     if request.method == "POST":
@@ -436,7 +447,7 @@ def confirm():
             document_id)
         )
         operation = -1
-        if movement["typem"] in ["pucharse", "return"]:
+        if movement["typem"] in ["purchase", "return"]:
             operation = 1
         db.execute(
             "UPDATE inventory SET Quantity = Quantity + ? WHERE id = ?",
