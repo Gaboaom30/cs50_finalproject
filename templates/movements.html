@@ -17,8 +17,24 @@
 
     <!-- Table header (static) -->
     <div class="row py-2 fw-bold justify-content-center border-bottom">
-        <div class="col-1">Date</div>
-        <div class="col-1">Type</div>
+        <div class="input-group col">
+            <select id="date-filter" class="form-select me-2">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="custom">From... to...</option>
+            </select>
+            <input type="date" id="start-date" class="form-control" style="display: none;">
+            <input type="date" id="end-date" class="form-control" style="display: none;">
+        </div>
+            <select id="filter-type" class="col form-select bg-light">
+                <option value="">All Types</option>
+                <option value="sale">Sale</option>
+                <option value="purchase">Purchase</option>
+                <option value="return">Return</option>
+                <option value="output">Output</option>
+            </select>
         <div class="col" style="width: 5%;">Document_id</div>
         <div class="col" style="width: 5%;">Draft_id</div>
         <div class="col-1">Product Id</div>
@@ -27,7 +43,11 @@
         <div class="col" style="width: 5%;">Price</div>
         <div class="col" style="width: 5%;">Total</div>
         <div class="col-1">Note</div>
-        <div class="col-1">Status</div>
+        <select class="col form-select bg-light" id="status-filter">
+            <option value="">All Statuses</option>
+            <option value="delivered">Delivered</option>
+            <option value="to deliver">To deliver</option>
+        </select>
     </div>
 
     <!-- Table body (dynamic) -->
@@ -79,52 +99,81 @@
     document.addEventListener("DOMContentLoaded", () => {
         const input = document.getElementById("search-input");
         const table = document.getElementById("inventory-table");
+        const filterType = document.getElementById("filter-type");
+        const statusFilter = document.getElementById("status-filter");
+        const startDateInput = document.getElementById("start-date");
+        const endDateInput = document.getElementById("end-date");
+        const dateFilter = document.getElementById("date-filter");
 
-        if (!input || !table) {
-            console.error("Search input or inventory table not found.");
-            return;
-        }
-
-        setupResizableRows();
-
-        input.addEventListener("input", function() {
-            console.log("Typing:", input.value);  // ✅ See this in DevTools
-
-            fetch(`/search_inventory_movements?q=${encodeURIComponent(input.value)}`)
-                .then(response => response.json())
-                .then(data => {
-                    let html = "";
-
-                    data.forEach(item => {
-                        html += `
-                            <div class="resizable-row row py-2 border-bottom justify-content-center">
-                                <div class="col-1 small">${item.date}</div>
-                                <div class="col-1 small">${item.type}</div>
-                                <div class="col small" style="width: 5%;">${item.document_id}</div>
-                                <div class="col small" style="width: 5%;">${item.draft_id}</div>
-                                <div class="col-1 small">${item.product_id}</div>
-                                <div class="col-2 small" >${item.name}</div>     
-                                <div class="col small" style="width: 5%;">${item.Units}</div>
-                                <div class="col small" style="width: 5%;">${item.price}</div>
-                                <div class="col small" style="width: 5%;">${item.toal}</div>
-                                <div class="col-1 small">${item.note}</div>
-                                <div class="col-1 small">${item.status}</div>
-                                <div class="resize-handle"></div>
-                            </div>
-                        `;
-                    });
-
-                    if (data.length === 0) {
-                        html = `<div class="text-muted mt-3">No results found.</div>`;
-                    }
-
-                    table.innerHTML = html;
-
-                    setupResizableRows();
-                })
-                .catch(error => console.error("Fetch error:", error));
+        function runSearch() {
+        const query = input.value;
+        const type = filterType.value;
+        const status = statusFilter.value;
+        const date = dateFilter.value;
+        const start = startDateInput.value;
+        const end = endDateInput.value;
+        
+        const params = new URLSearchParams({
+        q: query,
+        type: type,
+        status: status,
+        date: date,
+        start: start,
+        end: end
         });
+
+        fetch(`/search_inventory_movements?${params}`)
+            .then(response => response.json())
+            .then(data => {
+                let html = "";
+
+                data.forEach(item => {
+                    html += `
+                        <div class="resizable-row row py-2 border-bottom justify-content-center">
+                            <div class="col-1 small">${item.date}</div>
+                            <div class="col-1 small">${item.type}</div>
+                            <div class="col small" style="width: 5%;">${item.document_id}</div>
+                            <div class="col small" style="width: 5%;">${item.draft_id}</div>
+                            <div class="col-1 small">${item.product_id}</div>
+                            <div class="col-2 small">${item.name}</div>
+                            <div class="col small" style="width: 5%;">${item.Units}</div>
+                            <div class="col small" style="width: 5%;">${item.price}</div>
+                            <div class="col small" style="width: 5%;">${item.toal}</div>
+                            <div class="col-1 small">${item.note}</div>
+                            <div class="col-1 small">${item.status}</div>
+                            <div class="resize-handle"></div>
+                        </div>
+                    `;
+                });
+
+                if (data.length === 0) {
+                    html = `<div class="text-muted mt-3">No results found.</div>`;
+                }
+
+                table.innerHTML = html;
+                setupResizableRows();
+            })
+            .catch(error => console.error("Fetch error:", error));
+    }
+
+    input.addEventListener("input", runSearch);
+    filterType.addEventListener("change", runSearch);
+    statusFilter.addEventListener("change", runSearch);
+    dateFilter.addEventListener("change", () => {
+        if (dateFilter.value === "custom") {
+            startDateInput.style.display = "inline-block";
+            endDateInput.style.display = "inline-block";
+        } else {
+            startDateInput.style.display = "none";
+
+            endDateInput.style.display = "none";
+        }
+        runSearch();
     });
+
+    setupResizableRows(); // keep drag feature
+});
+
 </script>
 
 {% endblock %}

@@ -95,10 +95,22 @@ def search_inventory():
 def search_inventory_movements():
     db = get_db()
     query = request.args.get("q", "").strip()
-    results = db.execute(
-        "SELECT * FROM inventory_movements WHERE name LIKE ? OR product_id LIKE ?",
-        (f"%{query}%", f"%{query}%")
-    ).fetchall()
+    type_filter = request.args.get("type", "").strip()
+    status_filter = request.args.get("status", "").strip()
+
+    print("DEBUG:", query, type_filter)  # <- agrega esto
+
+    base_query = "SELECT * FROM inventory_movements WHERE (name LIKE ? OR product_id LIKE ?)"
+    params = [f"%{query}%", f"%{query}%"]
+    if type_filter:
+        base_query += " AND type = ?"
+        params.append(type_filter)
+    if status_filter:
+        base_query += " AND status = ?"
+        params.append(status_filter)
+    base_query += " ORDER BY date DESC"
+    results = db.execute(base_query, params).fetchall()
+
     data = [dict(row) for row in results]
     return jsonify(data)
 
