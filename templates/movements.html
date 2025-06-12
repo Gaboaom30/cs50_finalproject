@@ -9,47 +9,71 @@
 {% endblock %}
 
 {% block main %}
-<div class="container text-center mt-4">
+<div class="container text-center mt-4 justify-content-center">
     <!-- Search input -->
-    <div class="input-group w-50 mx-auto mb-4">
-        <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
-    </div>
-
-    <!-- Table header (static) -->
-    <div class="row py-2 fw-bold justify-content-center border-bottom">
-        <div class="input-group col">
-            <select id="date-filter" class="form-select me-2">
-                <option value="">All Dates</option>
-                <option value="today">Today</option>
-                <option value="this_week">This Week</option>
-                <option value="this_month">This Month</option>
-                <option value="custom">From... to...</option>
-            </select>
-            <input type="date" id="start-date" class="form-control" style="display: none;">
-            <input type="date" id="end-date" class="form-control" style="display: none;">
+    <div class="row mb-3">
+        <div class="col-4">
+            <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
         </div>
-            <select id="filter-type" class="col form-select bg-light">
+        <div class="col-2">
+            <select id="filter-type" class="form-select">
                 <option value="">All Types</option>
                 <option value="sale">Sale</option>
                 <option value="purchase">Purchase</option>
                 <option value="return">Return</option>
                 <option value="output">Output</option>
             </select>
-        <div class="col" style="width: 5%;">Document_id</div>
-        <div class="col" style="width: 5%;">Draft_id</div>
-        <div class="col-1">Product Id</div>
-        <div class="col-2">Name</div>     
+        </div>
+        <div class="col-2">
+            <select id="document-id-filter" class="form-select">
+                <option value="">All Document IDs</option>
+                {% for document in movements %}
+                    <option value="{{ document.document_id }}">{{ document.document_id }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-2">
+            <select id="status-filter" class="form-select">
+                <option value="">All Statuses</option>
+                <option value="delivered">Delivered</option>
+                <option value="to deliver">To deliver</option>
+            </select>
+        </div>
+        <div class="col-2">
+            <select id="date-filter" class="form-select">
+                <option value="">All Dates</option>
+                <option value="today">Today</option>
+                <option value="this_week">This Week</option>
+                <option value="this_month">This Month</option>
+                <option value="custom">From... to...</option>
+            </select>
+            <div class="col p-0">
+                <input type="date" id="start-date" class="form-control" style="display: none;">
+            </div>
+            <div class="col p-0">
+                <input type="date" id="end-date" class="form-control" style="display: none;">
+            </div>
+        </div>
+        
+
+        
+    </div>
+
+
+    <!-- Table header (static) -->
+    <div class="row py-2 fw-bold justify-content-center border-bottom">
+        <div class="col-1 sort-header" data-sort="date">Date</div>
+        <div class="col-1 sort-header" data-sort="type">Type</div>
+        <div class="col sort-header" data-sort="document_id" style="width: 5%;">Document Id</div>
+        <div class="col sort-header" data-sort="draft_id" style="width: 5%;">Draft Id</div>
+        <div class="col-1">Code</div>
+        <div class="col-2 sort-header" data-sort="name">Name</div>
         <div class="col" style="width: 5%;">Units</div>
         <div class="col" style="width: 5%;">Price</div>
         <div class="col" style="width: 5%;">Total</div>
         <div class="col-1">Note</div>
-        <select class="col form-select bg-light" id="status-filter">
-            <option value="">All Statuses</option>
-            <option value="delivered">Delivered</option>
-            <option value="to deliver">To deliver</option>
-        </select>
-    </div>
-
+        <div class="col-1 sort-header" data-sort="status">Status</div>
+</div>
     <!-- Table body (dynamic) -->
     <div id="inventory-table">
         {% for item in movements %}
@@ -91,12 +115,21 @@
     background-color: transparent;
     z-index: 1;
 }
+.sort-header {
+    cursor: pointer;
+}
+.sort-header::after {
+    content: " ⬍";
+    font-size: 0.8em;
+    color: #888;
+}
 </style>
 
  
 <script>
     
     document.addEventListener("DOMContentLoaded", () => {
+
         const input = document.getElementById("search-input");
         const table = document.getElementById("inventory-table");
         const filterType = document.getElementById("filter-type");
@@ -104,47 +137,56 @@
         const startDateInput = document.getElementById("start-date");
         const endDateInput = document.getElementById("end-date");
         const dateFilter = document.getElementById("date-filter");
+        const documentIdFilter = document.getElementById("document-id-filter");
+
+        let currentSortField = "";
+        let currentSortDirection = "asc"; // or "desc"
 
         function runSearch() {
-        const query = input.value;
-        const type = filterType.value;
-        const status = statusFilter.value;
-        const date = dateFilter.value;
-        const start = startDateInput.value;
-        const end = endDateInput.value;
-        
-        const params = new URLSearchParams({
-        q: query,
-        type: type,
-        status: status,
-        date: date,
-        start: start,
-        end: end
-        });
+            const query = input.value;
+            const type = filterType.value;
+            const status = statusFilter.value;
+            const date = dateFilter.value;
+            const start = startDateInput.value;
+            const end = endDateInput.value;
+            const document_id = documentIdFilter.value;
+            
+            
+            const params = new URLSearchParams({
+            q: query,
+            type: type,
+            status: status,
+            date: date,
+            start: start,
+            end: end,
+            document_id: document_id,
+            sort_by: currentSortField,
+            sort_dir: currentSortDirection,
+            });
 
-        fetch(`/search_inventory_movements?${params}`)
-            .then(response => response.json())
-            .then(data => {
-                let html = "";
+            fetch(`/search_inventory_movements?${params}`)
+                .then(response => response.json())
+                .then(data => {
+                    let html = "";
 
-                data.forEach(item => {
-                    html += `
-                        <div class="resizable-row row py-2 border-bottom justify-content-center">
-                            <div class="col-1 small">${item.date}</div>
-                            <div class="col-1 small">${item.type}</div>
-                            <div class="col small" style="width: 5%;">${item.document_id}</div>
-                            <div class="col small" style="width: 5%;">${item.draft_id}</div>
-                            <div class="col-1 small">${item.product_id}</div>
-                            <div class="col-2 small">${item.name}</div>
-                            <div class="col small" style="width: 5%;">${item.Units}</div>
-                            <div class="col small" style="width: 5%;">${item.price}</div>
-                            <div class="col small" style="width: 5%;">${item.toal}</div>
-                            <div class="col-1 small">${item.note}</div>
-                            <div class="col-1 small">${item.status}</div>
-                            <div class="resize-handle"></div>
-                        </div>
-                    `;
-                });
+                    data.forEach(item => {
+                        html += `
+                            <div class="resizable-row row py-2 border-bottom justify-content-center">
+                                <div class="col-1 small">${item.date}</div>
+                                <div class="col-1 small">${item.type}</div>
+                                <div class="col small" style="width: 5%;">${item.document_id}</div>
+                                <div class="col small" style="width: 5%;">${item.draft_id}</div>
+                                <div class="col-1 small">${item.product_id}</div>
+                                <div class="col-2 small">${item.name}</div>
+                                <div class="col small" style="width: 5%;">${item.Units}</div>
+                                <div class="col small" style="width: 5%;">${(item.price).toFixed(2)}</div>
+                                <div class="col small" style="width: 5%;">${(item.toal).toFixed(2)}</div>
+                                <div class="col-1 small">${item.note}</div>
+                                <div class="col-1 small">${item.status}</div>
+                                <div class="resize-handle"></div>
+                            </div>
+                        `;
+                    });
 
                 if (data.length === 0) {
                     html = `<div class="text-muted mt-3">No results found.</div>`;
@@ -152,10 +194,26 @@
 
                 table.innerHTML = html;
                 setupResizableRows();
-            })
-            .catch(error => console.error("Fetch error:", error));
-    }
+                })
+                .catch(error => console.error("Fetch error:", error));
+        }
 
+        document.querySelectorAll(".sort-header").forEach(header => {
+        header.addEventListener("click", () => {
+            const field = header.dataset.sort;
+            if (currentSortField === field) {
+                currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
+            } else {
+                currentSortField = field;
+                currentSortDirection = "asc";
+            }
+            runSearch();
+        });
+    });
+
+    documentIdFilter.addEventListener("change", runSearch);
+    startDateInput.addEventListener("change", runSearch);
+    endDateInput.addEventListener("change", runSearch);
     input.addEventListener("input", runSearch);
     filterType.addEventListener("change", runSearch);
     statusFilter.addEventListener("change", runSearch);

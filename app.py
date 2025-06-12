@@ -5,6 +5,7 @@ import sqlite3
 from flask import Flask, flash, redirect, render_template, request, session, g, jsonify
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
+from datetime import datetime, timedelta
 
 
 # Configure application
@@ -97,20 +98,61 @@ def search_inventory_movements():
     query = request.args.get("q", "").strip()
     type_filter = request.args.get("type", "").strip()
     status_filter = request.args.get("status", "").strip()
+    date_filter = request.args.get("date", "").strip()
+    start = request.args.get("start", "").strip()
+    end = request.args.get("end", "").strip()
+    document_id = request.args.get("document_id", "").strip()
 
-    print("DEBUG:", query, type_filter)  # <- agrega esto
+    sort_by = request.args.get("sort_by")
+    sort_dir = request.args.get("sort_dir", "asc")
+
+    print("DEBUG:", document_id)  # <- agrega esto
 
     base_query = "SELECT * FROM inventory_movements WHERE (name LIKE ? OR product_id LIKE ?)"
     params = [f"%{query}%", f"%{query}%"]
+
     if type_filter:
         base_query += " AND type = ?"
         params.append(type_filter)
+
     if status_filter:
         base_query += " AND status = ?"
         params.append(status_filter)
-    base_query += " ORDER BY date DESC"
-    results = db.execute(base_query, params).fetchall()
+    
+    if document_id:
+        base_query += " AND document_id = ?"
+        params.append(document_id)
 
+    if date_filter == "today":
+        today = datetime.now().date()
+        base_query += " AND date(date) = ?"
+        params.append(str(today))
+
+    elif date_filter == "this week":
+        today = datetime.now().date()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        base_query += " AND date(date) BETWEEN ? AND ?"
+        params.append(str(start_of_week))
+        params.append(str(end_of_week))
+
+    elif date_filter == "this month":
+        today = datetime.now().date()
+        start_of_month = today.replace(day=1)
+        end_of_month = (start_of_month + timedelta(days=31)).replace(day=1) - timedelta(days=1)
+        base_query += " AND date(date) BETWEEN ? AND ?"
+        params.append(str(start_of_month))
+        params.append(str(end_of_month))
+
+    elif date_filter == "custom":
+        base_query += " AND date(date) BETWEEN ? AND ?"
+        params.append(start)
+        params.append(end)
+
+    if sort_by in {"date", "type", "name", "document_id", "draft_id", "product_id", "status"}:
+        base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
+
+    results = db.execute(base_query, params).fetchall() 
     data = [dict(row) for row in results]
     return jsonify(data)
 
