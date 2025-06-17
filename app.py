@@ -73,7 +73,8 @@ def index():
 def inventory():
     db = get_db()
     inv = db.execute("SELECT * FROM inventory").fetchall()
-    return render_template("inventory.html", inv=inv)
+    categories = sorted(set(item["category"] for item in inv))
+    return render_template("inventory.html", inv=inv, categories=categories)
 
 @app.route("/inventory_movements")
 def inventory_movements():
@@ -85,10 +86,25 @@ def inventory_movements():
 def search_inventory():
     db = get_db()
     query = request.args.get("q", "").strip()
-    results = db.execute(
-        "SELECT * FROM inventory WHERE name LIKE ? OR id LIKE ?",
-        (f"%{query}%", f"%{query}%")
-    ).fetchall()
+    categories = request.args.get("category", "").strip()
+
+    sort_by = request.args.get("sort_by")
+    sort_dir = request.args.get("sort_dir", "asc")   
+
+    print("DEBUG:", sort_by, sort_dir)  # <- agrega esto
+   
+    base_query = "SELECT * FROM inventory WHERE (Name LIKE ? OR Id LIKE ?)"
+    params = [f"%{query}%", f"%{query}%"]
+
+    if categories:
+        base_query += " AND category = ?"
+        params.append(categories)
+    
+    if sort_by in {"Name", "Price", "Quantity"}:
+        base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
+    
+    results = db.execute(base_query, params).fetchall() 
+    
     data = [dict(row) for row in results]
     return jsonify(data)
 
@@ -149,7 +165,7 @@ def search_inventory_movements():
         params.append(start)
         params.append(end)
 
-    if sort_by in {"date", "type", "name", "document_id", "draft_id", "product_id", "status"}:
+    if sort_by in {"date", "name", "document_id", "draft_id", "product_id", "status"}:
         base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
 
     results = db.execute(base_query, params).fetchall() 

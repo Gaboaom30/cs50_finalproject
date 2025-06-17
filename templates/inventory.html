@@ -9,30 +9,42 @@
 {% endblock %}
 
 {% block main %}
-<div class="container text-center mt-4">
+<div class="container text-center mt-4 justify-content-center">
     <!-- Search input -->
-    <div class="input-group w-50 mx-auto mb-4">
-        <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
+    <div class="row mb-4 justify-content-center">
+        <div class="col-4">
+            <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
+        </div>
+        <div class="col-2">
+            <select id="category-filter" class="form-select">
+                <option value="">All Categories</option>
+                    {% for category in categories %}
+                        <option value="{{ category }}">{{ category }}</option>
+                    {% endfor %}
+            </select>
+        </div>
     </div>
 
     <!-- Table header (static) -->
     <div class="row fw-bold border-bottom pb-2">
         <div class="col">Code</div>
         <div class="col">Category</div>
-        <div class="col">Name</div>
-        <div class="col">Price</div>
-        <div class="col">Stock</div>
+        <div class="col sort-header" data-sort="Name">Name</div>
+        <div class="col sort-header" data-sort="Price">Price</div>
+        <div class="col sort-header" data-sort="Quantity">Stock</div>
     </div>
 
     <!-- Table body (dynamic) -->
     <div id="inventory-table">
         {% for item in inv %}
-            <div class="row py-2 border-bottom">
+            <div class="row resizable-row py-2 border-bottom justify-content-center">
                 <div class="col">{{ item.id }}</div>
                 <div class="col">{{ item.category }}</div>
                 <div class="col">{{ item.name }}</div>
-                <div class="col">${{ item.price }}</div>
+                <div class="col">{{ item.price }}</div>
                 <div class="col">{{ item.quantity }}</div>
+                <div class="resize-handle"></div>
+
             </div>
         {% endfor %}
     </div>
@@ -43,38 +55,64 @@
     document.addEventListener("DOMContentLoaded", () => {
         const input = document.getElementById("search-input");
         const table = document.getElementById("inventory-table");
+        const categoryFilter = document.getElementById("category-filter");
 
-        if (!input || !table) {
-            console.error("Search input or inventory table not found.");
-            return;
-        }
+        let currentSortField = "";
+        let currentSortDirection = "asc"; // or "desc"
 
-            fetch(`/search_inventory?q=${encodeURIComponent(input.value)}`)
+        function runSearch() {
+            const filter = input.value.toLowerCase();
+            const category = categoryFilter.value;
+            console.log(`category: ${category}`);
+
+            const params = new URLSearchParams({
+                q: filter,
+                category: category,
+                sort_by: currentSortField,
+                sort_dir: currentSortDirection,
+            });
+
+            fetch(`/search_inventory?${params}`)
                 .then(response => response.json())
                 .then(data => {
                     let html = "";
-
                     data.forEach(item => {
                         html += `
-                            <div class="row py-2 border-bottom">
+                            <div class="row resizable-row py-2 border-bottom justify-content-center">
                                 <div class="col">${item.Id}</div>
                                 <div class="col">${item.Category}</div>
                                 <div class="col">${item.Name}</div>
-                                <div class="col">$${item.Price}</div>
+                                <div class="col">${(item.Price).toFixed(1)}</div>
                                 <div class="col">${item.Quantity}</div>
-                            </div>
-                        `;
+                                <div class="resize-handle"></div>
+                            </div>`;
                     });
-
-                    if (data.length === 0) {
-                        html = `<div class="text-muted mt-3">No results found.</div>`;
-                    }
-
+                if (data.length === 0) {
+                    html = `<div class="text-center">No results found</div>`;
+                }
                     table.innerHTML = html;
+                    setupResizableRows();
                 })
-                .catch(error => console.error("Fetch error:", error));
-    });
+                .catch(error => console.error('Error fetching data:', error));
+        }
+        document.querySelectorAll(".sort-header").forEach(header => {
+            header.addEventListener("click", () => {
+                const field = header.dataset.sort;
+                console.log(`Sorting by: ${field}`);
 
+                if (currentSortField === field) {
+                    currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
+                } else {
+                    currentSortField = field;
+                    currentSortDirection = "asc";
+                }
+                runSearch();
+            });
+        });
+        input.addEventListener("input", runSearch);
+        categoryFilter.addEventListener("change", runSearch);
+        setupResizableRows();
+    });
 </script>
 
 {% endblock %}

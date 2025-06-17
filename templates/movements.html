@@ -11,7 +11,7 @@
 {% block main %}
 <div class="container text-center mt-4 justify-content-center">
     <!-- Search input -->
-    <div class="row mb-3">
+    <div class="row mb-4">
         <div class="col-4">
             <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
         </div>
@@ -25,12 +25,7 @@
             </select>
         </div>
         <div class="col-2">
-            <select id="document-id-filter" class="form-select">
-                <option value="">All Document IDs</option>
-                {% for document in movements %}
-                    <option value="{{ document.document_id }}">{{ document.document_id }}</option>
-                {% endfor %}
-            </select>
+            <input type="text" id="document-id-filter" class="form-control" placeholder="Document Id">
         </div>
         <div class="col-2">
             <select id="status-filter" class="form-select">
@@ -63,7 +58,7 @@
     <!-- Table header (static) -->
     <div class="row py-2 fw-bold justify-content-center border-bottom">
         <div class="col-1 sort-header" data-sort="date">Date</div>
-        <div class="col-1 sort-header" data-sort="type">Type</div>
+        <div class="col-1" data-sort="type">Type</div>
         <div class="col sort-header" data-sort="document_id" style="width: 5%;">Document Id</div>
         <div class="col sort-header" data-sort="draft_id" style="width: 5%;">Draft Id</div>
         <div class="col-1">Code</div>
@@ -96,34 +91,7 @@
 </div>
 
 <!-- JavaScript for live search -->
- <style>
-.resizable-row {
-    position: relative;
-    height: 60px;
-    transition: height 0.1s;
-    overflow: hidden; /* no scrollbars */
-    border-bottom: 1px solid #ccc;
-}
 
-.resize-handle {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 5px;
-    width: 100%;
-    cursor: row-resize;
-    background-color: transparent;
-    z-index: 1;
-}
-.sort-header {
-    cursor: pointer;
-}
-.sort-header::after {
-    content: " ⬍";
-    font-size: 0.8em;
-    color: #888;
-}
-</style>
 
  
 <script>
@@ -179,8 +147,8 @@
                                 <div class="col-1 small">${item.product_id}</div>
                                 <div class="col-2 small">${item.name}</div>
                                 <div class="col small" style="width: 5%;">${item.Units}</div>
-                                <div class="col small" style="width: 5%;">${(item.price).toFixed(2)}</div>
-                                <div class="col small" style="width: 5%;">${(item.toal).toFixed(2)}</div>
+                                <div class="col small" style="width: 5%;">${(item.price).toFixed(1)}</div>
+                                <div class="col small" style="width: 5%;">${(item.toal).toFixed(1)}</div>
                                 <div class="col-1 small">${item.note}</div>
                                 <div class="col-1 small">${item.status}</div>
                                 <div class="resize-handle"></div>
@@ -201,6 +169,7 @@
         document.querySelectorAll(".sort-header").forEach(header => {
         header.addEventListener("click", () => {
             const field = header.dataset.sort;
+            console.log(`Sorting by: ${field}`);
             if (currentSortField === field) {
                 currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
             } else {
@@ -211,7 +180,7 @@
         });
     });
 
-    documentIdFilter.addEventListener("change", runSearch);
+    documentIdFilter.addEventListener("input", runSearch);
     startDateInput.addEventListener("change", runSearch);
     endDateInput.addEventListener("change", runSearch);
     input.addEventListener("input", runSearch);

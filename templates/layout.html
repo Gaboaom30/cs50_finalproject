@@ -13,6 +13,34 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+     <style>
+.resizable-row {
+    position: relative;
+    height: 60px;
+    transition: height 0.1s;
+    overflow: hidden; /* no scrollbars */
+    border-bottom: 1px solid #ccc;
+}
+
+.resize-handle {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 5px;
+    width: 100%;
+    cursor: row-resize;
+    background-color: transparent;
+    z-index: 1;
+}
+.sort-header {
+    cursor: pointer;
+}
+.sort-header::after {
+    content: " ⬍";
+    font-size: 0.8em;
+    color: #888;
+}
+</style>
   </head>
 <body class="bg-light">
 
@@ -50,37 +78,43 @@
     <footer class="text-center mt-5 p-3 border-top">
         <p>&copy; 2025 Gabriel Olivett</p>
     </footer>
-<script>
-  function setupResizableRows() {
+    <script>
+        
+              function setupResizableRows() {
+    document.querySelectorAll('.resizable-row').forEach(row => {
+        if (row.dataset.resizable === "true") return;  // Avoid rebinding
 
-        document.querySelectorAll('.resizable-row').forEach(row => {
-            const handle = row.querySelector('.resize-handle');
-            let isdragging = false;
-            let startY = 0;
-            let startHeight = 0;
-            
-            handle.addEventListener('mousedown', (e) => {
-                isdragging = true;
-                startY = e.clientY;
-                startHeight = row.offsetHeight;            
-                document.body.style.userSelect = 'none'; // Prevent text selection
-                });
+        const handle = row.querySelector('.resize-handle');
+        if (!handle) return;
 
-            document.addEventListener('mousemove', (e) => {
-                if (!isdragging) return;
-                const dy = e.clientY - startY;
-                row.style.height = `${Math.max(60, startHeight + dy)}px`;// Minimum height of 50px
-                });
+        let isDragging = false;
+        let startY = 0;
+        let startHeight = 0;
 
-            document.addEventListener('mouseup', () => {
-                if (isdragging) {
-                    isdragging = false;
-                    document.body.style.userSelect = ''; // Restore text selection
-                }
-            });
+        handle.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startY = e.clientY;
+            startHeight = row.offsetHeight;
+            document.body.style.userSelect = 'none'; // Prevent text selection
         });
-    }
-</script>
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const dy = e.clientY - startY;
+            row.style.height = `${Math.max(60, startHeight + dy)}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                document.body.style.userSelect = '';
+            }
+        });
+
+        row.dataset.resizable = "true"; // Mark as bound
+    });
+}
+    </script>
 </body>
 </html>
 
