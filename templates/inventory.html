@@ -15,7 +15,7 @@
         <div class="col-4">
             <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
         </div>
-        <div class="col-2">
+        <div class="col-4">
             <select id="category-filter" class="form-select">
                 <option value="">All Categories</option>
                     {% for category in categories %}
@@ -25,28 +25,50 @@
         </div>
     </div>
 
+    <div class="mb-3">
+        <input type="checkbox" class="toggle-col btn-check" id="btn-check-1" data-target="col-code" autocomplete="off" checked>
+        <label class="btn" for="btn-check-1">Code</label>
+
+        <input type="checkbox" class="toggle-col btn-check" id="btn-check-2" data-target="col-category" autocomplete="off" checked>
+        <label class="btn" for="btn-check-2">Category</label>
+
+        <input type="checkbox" class="toggle-col btn-check" id="btn-check-3" data-target="col-name" autocomplete="off" checked>
+        <label class="btn" for="btn-check-3">Name</label>
+
+        <input type="checkbox" class="toggle-col btn-check" id="btn-check-4" data-target="col-price" autocomplete="off" checked>
+        <label class="btn" for="btn-check-4">Price</label>
+
+        <input type="checkbox" class="toggle-col btn-check" id="btn-check-5" data-target="col-quantity" autocomplete="off" checked>
+        <label class="btn" for="btn-check-5">Stock</label>
+    </div>
+
+    
+
     <!-- Table header (static) -->
-    <div class="row fw-bold border-bottom pb-2">
-        <div class="col">Code</div>
-        <div class="col">Category</div>
-        <div class="col sort-header" data-sort="Name">Name</div>
-        <div class="col sort-header" data-sort="Price">Price</div>
-        <div class="col sort-header" data-sort="Quantity">Stock</div>
+    <div id="inventory-table">
+    <div class="row fw-bold border-bottom pb-2 justify-content-center">
+        <div class="col-2 col-code">Code</div>
+        <div class="col-3 col-category">Category</div>
+        <div class="col-4 sort-header col-name" data-sort="Name">Name</div>
+        <div class="col-1 sort-header col-price" data-sort="Price">Price</div>
+        <div class="col-1 sort-header col-quantity" data-sort="Quantity">Stock</div>
     </div>
 
     <!-- Table body (dynamic) -->
-    <div id="inventory-table">
+    
+        <div id="inventory-data">
         {% for item in inv %}
             <div class="row resizable-row py-2 border-bottom justify-content-center">
-                <div class="col">{{ item.id }}</div>
-                <div class="col">{{ item.category }}</div>
-                <div class="col">{{ item.name }}</div>
-                <div class="col">{{ item.price }}</div>
-                <div class="col">{{ item.quantity }}</div>
+                <div class="col-2 col-code">{{ item.id }}</div>
+                <div class="col-3 col-category">{{ item.category }}</div>
+                <div class="col-4 col-name">{{ item.name }}</div>
+                <div class="col-1 col-price">{{ item.price }}</div>
+                <div class="col-1 col-quantity">{{ item.quantity }}</div>
                 <div class="resize-handle"></div>
 
             </div>
         {% endfor %}
+        </div>
     </div>
 </div>
 
@@ -54,16 +76,27 @@
 <script>
     document.addEventListener("DOMContentLoaded", () => {
         const input = document.getElementById("search-input");
-        const table = document.getElementById("inventory-table");
+        const table = document.getElementById("inventory-data");
         const categoryFilter = document.getElementById("category-filter");
 
         let currentSortField = "";
         let currentSortDirection = "asc"; // or "desc"
 
+        function applyColumnVisibility() {
+            document.querySelectorAll(".toggle-col").forEach(toggle => {
+                const targetClass = toggle.dataset.target;
+                const cols = document.querySelectorAll(`.${targetClass}`);
+                cols.forEach(col => {
+                    col.style.display = toggle.checked ? "" : "none";
+                });
+            });
+        }
+
+
         function runSearch() {
             const filter = input.value.toLowerCase();
             const category = categoryFilter.value;
-            console.log(`category: ${category}`);
+            
 
             const params = new URLSearchParams({
                 q: filter,
@@ -78,12 +111,12 @@
                     let html = "";
                     data.forEach(item => {
                         html += `
-                            <div class="row resizable-row py-2 border-bottom justify-content-center">
-                                <div class="col">${item.Id}</div>
-                                <div class="col">${item.Category}</div>
-                                <div class="col">${item.Name}</div>
-                                <div class="col">${(item.Price).toFixed(1)}</div>
-                                <div class="col">${item.Quantity}</div>
+                            <div class="row resizable-row py-2 border-bottom">
+                                <div class="col-2 col-code">${item.Id}</div>
+                                <div class="col-3 col-category">${item.Category}</div>
+                                <div class="col-4 col-name">${item.Name}</div>
+                                <div class="col-1 col-price">${(item.Price).toFixed(1)}</div>
+                                <div class="col-1 col-quantity">${item.Quantity}</div>
                                 <div class="resize-handle"></div>
                             </div>`;
                     });
@@ -92,9 +125,21 @@
                 }
                     table.innerHTML = html;
                     setupResizableRows();
+                    applyColumnVisibility();
                 })
                 .catch(error => console.error('Error fetching data:', error));
         }
+        
+        document.querySelectorAll(".toggle-col").forEach(checkbox => {
+            checkbox.addEventListener("change", () => {
+            const targetClass = checkbox.dataset.target;
+            const cells = document.querySelectorAll(`.${targetClass}`);
+            cells.forEach(cell => {
+                cell.style.display = checkbox.checked ? "" : "none";
+            });
+            });
+        });
+        
         document.querySelectorAll(".sort-header").forEach(header => {
             header.addEventListener("click", () => {
                 const field = header.dataset.sort;
@@ -107,11 +152,13 @@
                     currentSortDirection = "asc";
                 }
                 runSearch();
+                
             });
         });
         input.addEventListener("input", runSearch);
         categoryFilter.addEventListener("change", runSearch);
         setupResizableRows();
+        applyColumnVisibility();
     });
 </script>
 

@@ -12,10 +12,10 @@
 <div class="container text-center mt-4 justify-content-center">
     <!-- Search input -->
     <div class="row mb-4">
-        <div class="col-4">
+        <div class="fixed-col2 col-md-4 pb-1">
             <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
         </div>
-        <div class="col-2">
+        <div class="fixed-col2 col-md-2 pb-1">
             <select id="filter-type" class="form-select">
                 <option value="">All Types</option>
                 <option value="sale">Sale</option>
@@ -24,17 +24,17 @@
                 <option value="output">Output</option>
             </select>
         </div>
-        <div class="col-2">
+        <div class="fixed-col2 col-md-2 pb-1">
             <input type="text" id="document-id-filter" class="form-control" placeholder="Document Id">
         </div>
-        <div class="col-2">
+        <div class="fixed-col2 col-md-2 pb-1">
             <select id="status-filter" class="form-select">
                 <option value="">All Statuses</option>
                 <option value="delivered">Delivered</option>
                 <option value="to deliver">To deliver</option>
             </select>
         </div>
-        <div class="col-2">
+        <div class="fixed-col2 col-md-2 pb-1">
             <select id="date-filter" class="form-select">
                 <option value="">All Dates</option>
                 <option value="today">Today</option>
@@ -49,57 +49,94 @@
                 <input type="date" id="end-date" class="form-control" style="display: none;">
             </div>
         </div>
-        
-
-        
     </div>
 
+    <div class="mb-3 justify-content-center">
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-1" data-target="col-date" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-1">Date</label>
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-2" data-target="col-type" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-2">Type</label>
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-3" data-target="col-document" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-3">Document Id</label>
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-4" data-target="col-draft" autocomplete="off">
+            <label class="btn btn-sm" for="btn-check-4">Draft Id</label>
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-5" data-target="col-productId" autocomplete="off">
+            <label class="btn btn-sm" for="btn-check-5">Code</label>
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-6" data-target="col-name" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-6">Name</label>
+    
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-7" data-target="col-units" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-7">Units</label>
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-8" data-target="col-price" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-8">Price</label>
+           
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-9" data-target="col-total" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-9">Total</label>
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-10" data-target="col-note" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-10">Note</label>
+        
+            <input type="checkbox" class="toggle-col btn-check" id="btn-check-11" data-target="col-status" autocomplete="off" checked>
+            <label class="btn btn-sm" for="btn-check-11">Status</label>
+    </div>
 
     <!-- Table header (static) -->
-    <div class="row py-2 fw-bold justify-content-center border-bottom">
-        <div class="col-1 sort-header" data-sort="date">Date</div>
-        <div class="col-1" data-sort="type">Type</div>
-        <div class="col sort-header" data-sort="document_id" style="width: 5%;">Document Id</div>
-        <div class="col sort-header" data-sort="draft_id" style="width: 5%;">Draft Id</div>
-        <div class="col-1">Code</div>
-        <div class="col-2 sort-header" data-sort="name">Name</div>
-        <div class="col" style="width: 5%;">Units</div>
-        <div class="col" style="width: 5%;">Price</div>
-        <div class="col" style="width: 5%;">Total</div>
-        <div class="col-1">Note</div>
-        <div class="col-1 sort-header" data-sort="status">Status</div>
-</div>
-    <!-- Table body (dynamic) -->
-    <div id="inventory-table">
-        {% for item in movements %}
-            <div class="row resizable-row py-2 border-bottom justify-content-center">
-                <div class="col-1 small">{{item.date}}</div>
-                <div class="col-1 small">{{item.type}}</div>
-                <div class="col small" style="width: 5%;">{{item.document_id}}</div>
-                <div class="col small" style="width: 5%;">{{item.draft_id}}</div>
-                <div class="col-1 small">{{item.product_id}}</div>
-                <div class="col-2 small" >{{item.name}}</div>     
-                <div class="col small" style="width: 5%;">{{item.Units}}</div>
-                <div class="col small" style="width: 5%;">{{item.price}}</div>
-                <div class="col small" style="width: 5%;">{{item.toal}}</div>
-                <div class="col-1 small">{{item.note}}</div>
-                <div class="col-1 small">{{item.status}}</div>
-                <div class="resize-handle"></div>
+    <div class="table-scroll-x-wrapper">
+        <div class="justify-content-center" id="inventory-table">
+
+                <div class="row py-2 fw-bold border-bottom justify-content-center">
+                    <div class="col-1 col-date sort-header" data-sort="date">Date</div>
+                    <div class="col-1 col-type" data-sort="type">Type</div>
+                    <div class="col-1 col-document sort-header" data-sort="document_id">Document Id</div>
+                    <div class="col-1 col-draft sort-header" data-sort="draft_id" >Draft Id</div>
+                    <div class="col-1 col-productId">Code</div>
+                    <div class="col-2 col-name sort-header" data-sort="name">Name</div>
+                    <div class="col-1 col-units">Units</div>
+                    <div class="col-1 col-price">Price</div>
+                    <div class="col-1 col-total">Total</div>
+                    <div class="col-1 col-note">Note</div>
+                    <div class="col-1 col-status sort-header" data-sort="status">Status</div>
+                </div>        
+
+         <!-- Table body (dynamic) -->
+            <div id="inventory-data">
+            {% for item in movements %}
+                <div class="row resizable-row py-2 border-bottom justify-content-center">
+                    <div class="col-1 col-date small">{{item.date}}</div>
+                    <div class="col-1 col-type small">{{item.type}}</div>
+                    <div class="col-1 col-document small">{{item.document_id}}</div>
+                    <div class="col-1 col-draft small">{{item.draft_id}}</div>
+                    <div class="col-1 col-productId small">{{item.product_id}}</div>
+                    <div class="col-2 col-name small" >{{item.name}}</div>     
+                    <div class="col-1 col-units small">{{item.Units}}</div>
+                    <div class="col-1 col-price small">{{item.price}}</div>
+                    <div class="col-1 col-total small">{{item.toal}}</div>
+                    <div class="col-1 col-note small">{{item.note}}</div>
+                    <div class="col-1 col-status small">{{item.status}}</div>
+                    <div class="resize-handle"></div>
+                </div>
+            {% endfor %}
             </div>
-        {% endfor %}
+        </div>
     </div>
-</div>
 
 <!-- JavaScript for live search -->
 
 
- 
 <script>
     
     document.addEventListener("DOMContentLoaded", () => {
 
         const input = document.getElementById("search-input");
-        const table = document.getElementById("inventory-table");
+        const table = document.getElementById("inventory-data");
         const filterType = document.getElementById("filter-type");
         const statusFilter = document.getElementById("status-filter");
         const startDateInput = document.getElementById("start-date");
@@ -109,6 +146,16 @@
 
         let currentSortField = "";
         let currentSortDirection = "asc"; // or "desc"
+
+        function applyColumnVisibility() {
+            document.querySelectorAll(".toggle-col").forEach(toggle => {
+                const targetClass = toggle.dataset.target;
+                const cols = document.querySelectorAll(`.${targetClass}`);
+                cols.forEach(col => {
+                    col.style.display = toggle.checked ? "block" : "none";
+                });
+            });
+        }
 
         function runSearch() {
             const query = input.value;
@@ -139,18 +186,18 @@
 
                     data.forEach(item => {
                         html += `
-                            <div class="resizable-row row py-2 border-bottom justify-content-center">
-                                <div class="col-1 small">${item.date}</div>
-                                <div class="col-1 small">${item.type}</div>
-                                <div class="col small" style="width: 5%;">${item.document_id}</div>
-                                <div class="col small" style="width: 5%;">${item.draft_id}</div>
-                                <div class="col-1 small">${item.product_id}</div>
-                                <div class="col-2 small">${item.name}</div>
-                                <div class="col small" style="width: 5%;">${item.Units}</div>
-                                <div class="col small" style="width: 5%;">${(item.price).toFixed(1)}</div>
-                                <div class="col small" style="width: 5%;">${(item.toal).toFixed(1)}</div>
-                                <div class="col-1 small">${item.note}</div>
-                                <div class="col-1 small">${item.status}</div>
+                            <div class="row resizable-row py-2 border-bottom justify-content-center"">
+                                <div class="col-1 col-date small">${item.date}</div>
+                                <div class="col-1 col-type small">${item.type}</div>
+                                <div class="col-1 col-document small">${item.document_id}</div>
+                                <div class="col-1 col-draft small">${item.draft_id}</div>
+                                <div class="col-1 col-productId small">${item.product_id}</div>
+                                <div class="col-2 col-name small">${item.name}</div>
+                                <div class="col-1 col-total small">${(item.toal).toFixed(1)}</div>
+                                <div class="col-1 col-units small">${item.Units}</div>
+                                <div class="col-1 col-price small">${(item.price).toFixed(1)}</div>
+                                <div class="col-1 col-note small">${item.note}</div>
+                                <div class="col-1 col-status small">${item.status}</div>
                                 <div class="resize-handle"></div>
                             </div>
                         `;
@@ -162,9 +209,20 @@
 
                 table.innerHTML = html;
                 setupResizableRows();
+                applyColumnVisibility();
                 })
                 .catch(error => console.error("Fetch error:", error));
         }
+
+        document.querySelectorAll(".toggle-col").forEach(checkbox => {
+            checkbox.addEventListener("change", () => {
+            const targetClass = checkbox.dataset.target;
+            const cells = document.querySelectorAll(`.${targetClass}`);
+            cells.forEach(cell => {
+                cell.style.display = checkbox.checked ? "" : "none";
+            });
+            });
+        });
 
         document.querySelectorAll(".sort-header").forEach(header => {
         header.addEventListener("click", () => {
@@ -199,6 +257,7 @@
     });
 
     setupResizableRows(); // keep drag feature
+    applyColumnVisibility();
 });
 
 </script>

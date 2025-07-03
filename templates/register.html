@@ -73,26 +73,26 @@
 </div>
 {% if session.get("draft_movements") %}
     <div class="container  mt-5">
-        <div class="row fw-bold">
-            <div class="col-1"><strong>Type</strong></div>
-            <div class="col-2"><strong>Code</strong></div>
-            <div class="col-4"><Strong>Name</Strong></div>
-            <div class="col-1"><strong>Qty</strong></div>
-            <div class="col-1"><strong>Price</strong></div>
-            <div class="col-1"><strong>Total</strong></div>
-            <div class="col-1"><strong>Note</strong></div>
-            <div class="col-1"><strong>Action</strong></div>
+        <div class="row fw-bold mb-3">
+            <div class="col-12 col-md-1"><strong>Type</strong></div>
+            <div class="col-12 col-md-1"><strong>Code</strong></div>
+            <div class="col-12 col-md-4"><Strong>Name</Strong></div>
+            <div class="col-12 col-md-1"><strong>Qty</strong></div>
+            <div class="col-12 col-md-1"><strong>Price</strong></div>
+            <div class="col-12 col-md-1"><strong>Total</strong></div>
+            <div class="col-12 col-md-1"><strong>Note</strong></div>
+            <div class="col-12 col-md-1"><strong>Action</strong></div>
         </div>
         {% for movement in session["draft_movements"] %}
             <div class="row align-items-center mb-3">
-                <div class="col-1 small">{{ movement["typem"] }}</div>
-                <div class="col-2 small">{{ movement["code"] }}</div>
-                <div class="col-4 small">{{ movement["name"] }}</div>
-                <div class="col-1 small">{{ movement["qty"] }}</div>
-                <div class="col-1 small">{{ movement["price"] }}</div>
-                <div class="col-1 small">{{ movement["total"] }}</div>
-                <div class="col-1 small">{{ movement["note"] }}</div>
-                <div class="col-1 small">
+                <div class="col-12 col-md-1 small">{{ movement["typem"] }}</div>
+                <div class="col-12 col-md-2 small">{{ movement["code"] }}</div>
+                <div class="col-12 col-md-4 small">{{ movement["name"] }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["qty"] }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["price"] }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["total"] }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["note"] }}</div>
+                <div class="col-12 col-md-1 small">
                     <form action="/delete_movement" method="POST">
                         <input type="hidden" name="index" value="{{ loop.index0 }}">
                         <button type="submit" class="btn btn-outline-dark btn-sm">Delete</button>
