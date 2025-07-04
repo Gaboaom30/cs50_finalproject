@@ -72,10 +72,10 @@
     </form>
 </div>
 {% if session.get("draft_movements") %}
-    <div class="container  mt-5">
+    <div class="container mt-5">
         <div class="row fw-bold mb-3">
             <div class="col-12 col-md-1"><strong>Type</strong></div>
-            <div class="col-12 col-md-1"><strong>Code</strong></div>
+            <div class="col-12 col-md-2"><strong>Code</strong></div>
             <div class="col-12 col-md-4"><Strong>Name</Strong></div>
             <div class="col-12 col-md-1"><strong>Qty</strong></div>
             <div class="col-12 col-md-1"><strong>Price</strong></div>
@@ -84,7 +84,7 @@
             <div class="col-12 col-md-1"><strong>Action</strong></div>
         </div>
         {% for movement in session["draft_movements"] %}
-            <div class="row align-items-center mb-3">
+            <div class="row -center mb-3">
                 <div class="col-12 col-md-1 small">{{ movement["typem"] }}</div>
                 <div class="col-12 col-md-2 small">{{ movement["code"] }}</div>
                 <div class="col-12 col-md-4 small">{{ movement["name"] }}</div>
@@ -159,7 +159,7 @@
                 return;
             }
     
-            fetch(`/search_inventory?q=${encodeURIComponent(query)}`)
+            fetch(`/search_inventory_register?q=${encodeURIComponent(query)}`)
                 .then(response => response.json())
                 .then(data => {
                     list.innerHTML = "";

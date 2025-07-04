@@ -74,7 +74,7 @@ def inventory():
     db = get_db()
     inv = db.execute("SELECT * FROM inventory").fetchall()
     categories = sorted(set(item["category"] for item in inv))
-    return render_template("inventory.html", inv=inv, categories=categories)
+    return render_template("inventory.html", categories=categories)
 
 @app.route("/inventory_movements")
 def inventory_movements():
@@ -82,9 +82,29 @@ def inventory_movements():
     movements = db.execute("SELECT * FROM inventory_movements ORDER BY date DESC").fetchall()
     return render_template("movements.html", movements=movements)
 
+@app.route("/search_inventory_register")
+def search_inventory_register():
+    db = get_db()
+    # Get query parameters
+    query = request.args.get("q", "").strip()
+  
+    base_query = "SELECT * FROM inventory WHERE (Name LIKE ? OR Id LIKE ?)"
+    params = [f"%{query}%", f"%{query}%"]
+
+    results = db.execute(base_query, params).fetchall() 
+    
+    data = [dict(row) for row in results]
+
+    return jsonify(data)
+
 @app.route("/search_inventory")
 def search_inventory():
     db = get_db()
+
+    page = int(request.args.get("page", 1))
+    per_page = 20
+    offset = (page - 1) * per_page
+    # Get query parameters
     query = request.args.get("q", "").strip()
     categories = request.args.get("category", "").strip()
 
@@ -94,19 +114,34 @@ def search_inventory():
     print("DEBUG:", sort_by, sort_dir)  # <- agrega esto
    
     base_query = "SELECT * FROM inventory WHERE (Name LIKE ? OR Id LIKE ?)"
+    total_query = "SELECT COUNT(*) as count FROM inventory WHERE (Name LIKE ? OR Id LIKE ?)"
     params = [f"%{query}%", f"%{query}%"]
 
     if categories:
         base_query += " AND category = ?"
+        total_query += " AND category = ?"
         params.append(categories)
     
     if sort_by in {"Name", "Price", "Quantity"}:
         base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
-    
+
+    total_pages_query = db.execute(total_query, params).fetchall()
+    total_count = total_pages_query[0]["count"]
+    total_pages = (total_count + per_page - 1) // per_page
+
+    base_query += " LIMIT ? OFFSET ?"
+    params.append(per_page)
+    params.append(offset)
+
     results = db.execute(base_query, params).fetchall() 
     
     data = [dict(row) for row in results]
-    return jsonify(data)
+
+    return jsonify({
+        "data": data,
+        "total_pages": total_pages,
+        "current_page": page,
+        })
 
 @app.route("/search_inventory_movements")
 def search_inventory_movements():
@@ -277,7 +312,7 @@ def index_payment():
                 db.execute(
                     "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)",
                     (payment["method"], payment["amount"],
-                    draft_id, datetime.datetime.now(), movement_id, payment_method_id)
+                    draft_id, datetime.now(), movement_id, payment_method_id)
                 )
 
                 # Update the balance
@@ -542,7 +577,7 @@ def confirm():
             (movement["typem"], movement["name"], movement["code"],
             movement["qty"], movement["price"], movement["total"],
             movement["note"], movement["status"],
-            movement["pm_id"], datetime.datetime.now(),
+            movement["pm_id"], datetime.now(),
             document_id)
         )
         operation = -1
@@ -565,7 +600,7 @@ def confirm():
         db.execute(
             "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)",
             (payment["method"], payment["amount"],
-            payment["pm_id"], datetime.datetime.now(), document_id, payment_method_id)
+            payment["pm_id"], datetime.now(), document_id, payment_method_id)
         )
             
             
