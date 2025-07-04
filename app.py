@@ -111,6 +111,11 @@ def search_inventory():
 @app.route("/search_inventory_movements")
 def search_inventory_movements():
     db = get_db()
+
+    page = int(request.args.get("page", 1))
+    per_page = 20
+    offset = (page - 1) * per_page
+    # Get query parameters
     query = request.args.get("q", "").strip()
     type_filter = request.args.get("type", "").strip()
     status_filter = request.args.get("status", "").strip()
@@ -127,21 +132,27 @@ def search_inventory_movements():
     base_query = "SELECT * FROM inventory_movements WHERE (name LIKE ? OR product_id LIKE ?)"
     params = [f"%{query}%", f"%{query}%"]
 
+    total_query = "SELECT COUNT(*) as count FROM inventory_movements WHERE (name LIKE ? OR product_id LIKE ?)"  
+
     if type_filter:
         base_query += " AND type = ?"
+        total_query += " AND type = ?"
         params.append(type_filter)
 
     if status_filter:
         base_query += " AND status = ?"
+        total_query += " AND status = ?"
         params.append(status_filter)
     
     if document_id:
         base_query += " AND document_id = ?"
+        total_query += " AND document_id = ?"
         params.append(document_id)
 
     if date_filter == "today":
         today = datetime.now().date()
         base_query += " AND date(date) = ?"
+        total_query += " AND date(date) = ?"
         params.append(str(today))
 
     elif date_filter == "this week":
@@ -149,6 +160,7 @@ def search_inventory_movements():
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
         base_query += " AND date(date) BETWEEN ? AND ?"
+        total_query += " AND date(date) BETWEEN ? AND ?"
         params.append(str(start_of_week))
         params.append(str(end_of_week))
 
@@ -157,20 +169,37 @@ def search_inventory_movements():
         start_of_month = today.replace(day=1)
         end_of_month = (start_of_month + timedelta(days=31)).replace(day=1) - timedelta(days=1)
         base_query += " AND date(date) BETWEEN ? AND ?"
+        total_query += " AND date(date) BETWEEN ? AND ?"
         params.append(str(start_of_month))
         params.append(str(end_of_month))
 
     elif date_filter == "custom":
         base_query += " AND date(date) BETWEEN ? AND ?"
+        total_query += " AND date(date) BETWEEN ? AND ?"
         params.append(start)
         params.append(end)
 
     if sort_by in {"date", "name", "document_id", "draft_id", "product_id", "status"}:
         base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
 
+    total_pages_query = db.execute(total_query, params).fetchall()
+    total_count = total_pages_query[0]["count"]
+    total_pages = (total_count + per_page - 1) // per_page
+
+    base_query += f" LIMIT ? OFFSET ?"
+    params.append(per_page)
+    params.append(offset)
+
     results = db.execute(base_query, params).fetchall() 
     data = [dict(row) for row in results]
-    return jsonify(data)
+
+    print("DEBUG total_pages:", total_pages)
+    
+    return jsonify({
+        "data": data,
+        "total_pages": total_pages,
+        "current_page": page,
+        })
 
 @app.route("/delivery", methods=["POST"])
 def delivery():

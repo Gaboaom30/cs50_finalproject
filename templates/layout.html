@@ -44,12 +44,17 @@
   overflow-x: auto;
   overflow-y: auto;
   width: 100%;
-  max-height: 50vh;
+  max-height: 55vh;
 }
 
 #inventory-table {
   min-width: 1200px;
   display: inline-block;
+}
+@media (max-width: 768px) {
+    .table-scroll-x-wrapper {
+        max-height: 45vh; /* Adjust height for smaller screens */
+    }
 }
 
 </style>
@@ -91,8 +96,8 @@
         <p>&copy; 2025 Gabriel Olivett</p>
     </footer>
     <script>
-        
-              function setupResizableRows() {
+
+     function setupResizableRows() {
     document.querySelectorAll('.resizable-row').forEach(row => {
         if (row.dataset.resizable === "true") return;  // Avoid rebinding
 

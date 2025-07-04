@@ -92,7 +92,7 @@
     <div class="table-scroll-x-wrapper">
         <div class="justify-content-center" id="inventory-table">
 
-                <div class="row py-2 fw-bold border-bottom justify-content-center">
+                <div class="row py-2 fw-bold border-bottom">
                     <div class="col-1 col-date sort-header" data-sort="date">Date</div>
                     <div class="col-1 col-type" data-sort="type">Type</div>
                     <div class="col-1 col-document sort-header" data-sort="document_id">Document Id</div>
@@ -109,7 +109,7 @@
          <!-- Table body (dynamic) -->
             <div id="inventory-data">
             {% for item in movements %}
-                <div class="row resizable-row py-2 border-bottom justify-content-center">
+                <div class="row resizable-row py-2 border-bottom">
                     <div class="col-1 col-date small">{{item.date}}</div>
                     <div class="col-1 col-type small">{{item.type}}</div>
                     <div class="col-1 col-document small">{{item.document_id}}</div>
@@ -127,6 +127,8 @@
             </div>
         </div>
     </div>
+    <div id="pagination-controls" class="mt-3 d-flex justify-content-center gap-2 flex-wrap"></div>
+
 
 <!-- JavaScript for live search -->
 
@@ -143,6 +145,7 @@
         const endDateInput = document.getElementById("end-date");
         const dateFilter = document.getElementById("date-filter");
         const documentIdFilter = document.getElementById("document-id-filter");
+        let currentPage = 1; // Track the current page
 
         let currentSortField = "";
         let currentSortDirection = "asc"; // or "desc"
@@ -155,6 +158,80 @@
                     col.style.display = toggle.checked ? "block" : "none";
                 });
             });
+        }
+
+        function renderTable (data) {
+            let html = "";
+                data.forEach(item => {
+                    html += `
+                        <div class="row resizable-row py-2 border-bottom">
+                            <div class="col-1 col-date small">${item.date}</div>
+                            <div class="col-1 col-type small">${item.type}</div>
+                            <div class="col-1 col-document small">${item.document_id}</div>
+                            <div class="col-1 col-draft small">${item.draft_id}</div>
+                            <div class="col-1 col-productId small">${item.product_id}</div>
+                            <div class="col-2 col-name small">${item.name}</div>
+                            <div class="col-1 col-total small">${(item.toal).toFixed(1)}</div>
+                            <div class="col-1 col-units small">${item.Units}</div>
+                            <div class="col-1 col-price small">${(item.price).toFixed(1)}</div>
+                            <div class="col-1 col-note small">${item.note}</div>
+                            <div class="col-1 col-status small">${item.status}</div>
+                            <div class="resize-handle"></div>
+                        </div>
+                    `;
+                });
+
+            if (data.length === 0) {
+                html = `<div class="text-muted mt-3">No results found.</div>`;                
+            }
+                    table.innerHTML = html;
+        }
+
+         function renderPagination(totalPages, currentPageParam) {
+            const container = document.getElementById("pagination-controls");
+            container.innerHTML = "";
+
+            // Previous button
+            const prev = document.createElement("button");
+            prev.textContent = "Previous";
+            prev.className = "btn btn-secondary";
+            prev.disabled = currentPageParam === 1;
+            prev.addEventListener("click", () => {
+                if (currentPage > 1) {
+                    currentPage--;
+                    runSearch();
+                }
+            });
+            container.appendChild(prev);
+
+            // Numbered buttons
+            if (totalPages > 10) {
+                totalPages = 10; // Limit to 20 pages for simplicity
+            }    
+            
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement("button");
+                btn.textContent = i;
+                btn.className = `btn ${i === currentPageParam ? "btn-primary" : "btn-outline-primary"}`;
+                btn.addEventListener("click", () => {
+                    currentPage = i;
+                    runSearch();
+                });
+                container.appendChild(btn);
+            }
+
+            // Next button
+            const next = document.createElement("button");
+            next.textContent = "Next";
+            next.className = "btn btn-secondary";
+            next.disabled = currentPageParam === totalPages;
+            next.addEventListener("click", () => {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    runSearch();
+                }
+            });
+            container.appendChild(next);
         }
 
         function runSearch() {
@@ -177,38 +254,16 @@
             document_id: document_id,
             sort_by: currentSortField,
             sort_dir: currentSortDirection,
+            page: currentPage,
             });
 
             fetch(`/search_inventory_movements?${params}`)
                 .then(response => response.json())
-                .then(data => {
-                    let html = "";
+                .then(result => {
 
-                    data.forEach(item => {
-                        html += `
-                            <div class="row resizable-row py-2 border-bottom justify-content-center"">
-                                <div class="col-1 col-date small">${item.date}</div>
-                                <div class="col-1 col-type small">${item.type}</div>
-                                <div class="col-1 col-document small">${item.document_id}</div>
-                                <div class="col-1 col-draft small">${item.draft_id}</div>
-                                <div class="col-1 col-productId small">${item.product_id}</div>
-                                <div class="col-2 col-name small">${item.name}</div>
-                                <div class="col-1 col-total small">${(item.toal).toFixed(1)}</div>
-                                <div class="col-1 col-units small">${item.Units}</div>
-                                <div class="col-1 col-price small">${(item.price).toFixed(1)}</div>
-                                <div class="col-1 col-note small">${item.note}</div>
-                                <div class="col-1 col-status small">${item.status}</div>
-                                <div class="resize-handle"></div>
-                            </div>
-                        `;
-                    });
-
-                if (data.length === 0) {
-                    html = `<div class="text-muted mt-3">No results found.</div>`;
-                }
-
-                table.innerHTML = html;
+                renderTable(result.data);
                 setupResizableRows();
+                renderPagination(result.total_pages, result.current_page);
                 applyColumnVisibility();
                 })
                 .catch(error => console.error("Fetch error:", error));
@@ -258,6 +313,7 @@
 
     setupResizableRows(); // keep drag feature
     applyColumnVisibility();
+    runSearch(); // Initial search to populate the table
 });
 
 </script>
