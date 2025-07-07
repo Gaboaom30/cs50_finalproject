@@ -22,7 +22,7 @@
 {% block main %}
 <div class="container">
     <form class="row gy-4 gx-auto justify-content-center align-items-center" action="/register" method="POST">
-        <div class="col-md-1">
+        <div class="col-12 col-md-2">
             <select class="form-select" name ="typem" id="type_m">
                 <option value="sale" selected>Sale</option>
                 <option value="purchase">Purchase</option>
@@ -30,23 +30,23 @@
                 <option value="output">Output</option>
             </select>
             </div>
-        <div class="col-md-2">
+        <div class="col-12 col-md-2">
         <input type="text" name="code" id="codeInput" class="form-control" placeholder="Code">
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
             <input type="text" name="search_name" id="nameInput" class="form-control" placeholder="Name">
             <div id="autocomplete-list" class="list-group position-absolute w-40" style="z-index: 10;"></div>
         </div>
-        <div class="col-md-1">
+        <div class="col-12 col-md-2">
             <input type="number" name="qty" class="form-control" value ="1" id="qtyInput" placeholder="Qty">
         </div>
-        <div class="col-md-1">
+        <div class="col-12 col-md-2">
             <input type="number" name="price" id="priceInput" class="form-control" placeholder="Price">
         </div>
-        <div class="col-md-2">
+        <div class="col-12 col-md-2">
             <textarea type="text" name="note" id="noteInput" class="form-control" rows="1" placeholder="Note"></textarea>
             </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
         <select class="form-select" name="pm" id="pmSelect">
             <option selected disabled>Payment method</option>
             {% for currency in pm %}

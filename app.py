@@ -76,6 +76,13 @@ def inventory():
     categories = sorted(set(item["category"] for item in inv))
     return render_template("inventory.html", categories=categories)
 
+@app.route("/currencies")
+def currencies():
+    db = get_db()
+    currencies = db.execute("SELECT * FROM currencies").fetchall()
+    currencies_movements = db.execute("SELECT * FROM currencies_movements").fetchall()
+    return render_template("currencies.html", currencies=currencies, currencies_movements=currencies_movements)
+
 @app.route("/inventory_movements")
 def inventory_movements():
     db = get_db()

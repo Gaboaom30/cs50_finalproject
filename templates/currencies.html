@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block title %}Currencies{% endblock %}
+
+{% block h1 %}
+    <h1>Inventory</h1>
+{% endblock %}
+
+{% block main %}
+<div class="container mt-4">
+    <div class="row">
+        <div name="currencies" class="col-3">
+            <h4>Currencies</h4>
+            <div class="container mt-4">
+                <div class="row fw-bold">
+                    <div class="col">Code</div>
+                    <div class="col">Name</div>
+                    <div class="col">Balance</div>
+                </div>          
+                    
+            {% for currency in currencies %}
+                <div class="row">
+                    <div class="col">{{ currency.Id }}</div>
+                    <div class="col">{{ currency.name }}</div>
+                    <div class="col">{{ currency.balance }}</div>
+                </div>
+            {% endfor %}      
+            </div>       
+        </div>
+        
+        <div name="currencies_movements" class="col-9 border">
+            <h4>Movements</h4>
+            <div class="container mt-4">
+                <div class="row fw-bold">
+                    <div class="col">Date</div>
+                    <div class="col">Document Id</div>
+                    <div class="col">Draft Id</div>
+                    <div class="col">Code</div>
+                    <div class="col">Currency</div>
+                    <div class="col">Amount</div>
+                    
+                </div>          
+                    
+                {% for movement in currencies_movements %}
+                    <div class="row resizable-row py-2 border-bottom">
+                        <div class="col">{{ movement.date }}</div>
+                        <div class="col">{{ movement.document_Id }}</div>
+                        <div class="col">{{ movement.draft_Id }}</div>
+                        <div class="col">{{ movement.payment_method_id }}</div>
+                        <div class="col">{{ movement.name }}</div>
+                        <div class="col">{{ movement.amount }}</div>
+                        <div class="resize-handle"></div>
+                    </div>
+                 {% endfor %}             
+            </div>
+    </div>
+</div>
+{% endblock %}
