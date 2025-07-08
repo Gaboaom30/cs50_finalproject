@@ -83,6 +83,94 @@ def currencies():
     currencies_movements = db.execute("SELECT * FROM currencies_movements").fetchall()
     return render_template("currencies.html", currencies=currencies, currencies_movements=currencies_movements)
 
+@app.route("/currencies_movements")
+def currencies_movements():
+    db = get_db()
+    page = int(request.args.get("page", 1))
+    per_page = 20
+    offset = (page - 1) * per_page
+    # Get query parameters
+    document_id = request.args.get("document_id", "").strip()
+    draft_id = request.args.get("draft_id", "").strip()
+    name_filter = request.args.get("currency", "").strip()
+    id_filter = request.args.get("code", "").strip()
+    date_filter = request.args.get("date", "").strip()
+    start = request.args.get("start_date", "").strip()
+    end = request.args.get("end_date", "").strip()
+
+    sort_by = request.args.get("sort_by", "date")
+    sort_dir = request.args.get("sort_dir", "asc")
+
+    base_query = "SELECT * FROM currencies_movements WHERE name LIKE ?"
+    total_query = "SELECT COUNT(*) as count FROM currencies_movements WHERE name LIKE ?"
+    params = [f"%{name_filter}%"]
+
+    if document_id:
+        base_query += " AND document_id = ?"
+        total_query += " AND document_id = ?"
+        params.append(document_id)
+    
+    if draft_id:
+        base_query += " AND draft_id = ?"
+        total_query += " AND draft_id = ?"
+        params.append(draft_id)
+
+    if id_filter:
+        base_query += " AND id = ?"
+        total_query += " AND id = ?"
+        params.append(id_filter)   
+
+    if date_filter == "today":
+        today = datetime.now().date()
+        base_query += " AND date(date) = ?"
+        total_query += " AND date(date) = ?"
+        params.append(str(today))
+
+    elif date_filter == "this_week":
+
+        today = datetime.now().date()
+        start_of_week = today - timedelta(days=today.weekday())
+        end_of_week = start_of_week + timedelta(days=6)
+        base_query += " AND date(date) BETWEEN ? AND ?"
+        total_query += " AND date(date) BETWEEN ? AND ?"
+        params.append(str(start_of_week))
+        params.append(str(end_of_week))
+
+    elif date_filter == "this_month":
+        today = datetime.now().date()
+        start_of_month = today.replace(day=1)
+        end_of_month = (start_of_month + timedelta(days=31)).replace(day=1) - timedelta(days=1)
+        base_query += " AND date(date) BETWEEN ? AND ?"
+        total_query += " AND date(date) BETWEEN ? AND ?"
+        params.append(str(start_of_month))
+        params.append(str(end_of_month))
+
+    elif date_filter == "custom":
+        base_query += " AND date(date) BETWEEN ? AND ?"
+        total_query += " AND date(date) BETWEEN ? AND ?"
+        params.append(start)
+        params.append(end)
+
+    if sort_by in {"date", "document_id", "draft_id", "payment_method_id", "name", "amount"}:
+        base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
+        total_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
+    
+    total_pages_query = db.execute(total_query, params).fetchall()
+    total_count = total_pages_query[0]["count"]
+    total_pages = (total_count + per_page - 1) // per_page
+
+    base_query += " LIMIT ? OFFSET ?"
+    params.append(per_page)
+    params.append(offset)
+
+    movements = db.execute(base_query, params).fetchall()
+    data = [dict(row) for row in movements]
+    return jsonify({
+        "data": data,
+        "total_pages": total_pages,
+        "currentPage": page,
+    })
+
 @app.route("/inventory_movements")
 def inventory_movements():
     db = get_db()
@@ -128,13 +216,14 @@ def search_inventory():
         base_query += " AND category = ?"
         total_query += " AND category = ?"
         params.append(categories)
-    
-    if sort_by in {"Name", "Price", "Quantity"}:
-        base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
 
     total_pages_query = db.execute(total_query, params).fetchall()
     total_count = total_pages_query[0]["count"]
     total_pages = (total_count + per_page - 1) // per_page
+
+    if sort_by in {"Name", "Id", "Price", "Quantity"}:
+        base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
+
 
     base_query += " LIMIT ? OFFSET ?"
     params.append(per_page)
@@ -197,7 +286,7 @@ def search_inventory_movements():
         total_query += " AND date(date) = ?"
         params.append(str(today))
 
-    elif date_filter == "this week":
+    elif date_filter == "this_week":
         today = datetime.now().date()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
@@ -206,7 +295,7 @@ def search_inventory_movements():
         params.append(str(start_of_week))
         params.append(str(end_of_week))
 
-    elif date_filter == "this month":
+    elif date_filter == "this_month":
         today = datetime.now().date()
         start_of_month = today.replace(day=1)
         end_of_month = (start_of_month + timedelta(days=31)).replace(day=1) - timedelta(days=1)
@@ -221,12 +310,14 @@ def search_inventory_movements():
         params.append(start)
         params.append(end)
 
-    if sort_by in {"date", "name", "document_id", "draft_id", "product_id", "status"}:
-        base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
-
+    
     total_pages_query = db.execute(total_query, params).fetchall()
     total_count = total_pages_query[0]["count"]
     total_pages = (total_count + per_page - 1) // per_page
+    print("DEBUG total_count:", total_pages)  # <- agrega esto
+    
+    if sort_by in {"date", "name", "document_id", "draft_id", "product_id", "status"}:
+        base_query += f" ORDER BY {sort_by} {sort_dir.upper()}"
 
     base_query += f" LIMIT ? OFFSET ?"
     params.append(per_page)

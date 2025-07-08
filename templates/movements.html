@@ -25,7 +25,7 @@
             </select>
         </div>
         <div class="col-12 col-md-2 pb-1">
-            <input type="text" id="document-id-filter" class="form-control" placeholder="Document Id">
+            <input type="number" id="document-id-filter" class="form-control" placeholder="Document Id">
         </div>
         <div class="col-12 col-md-2 pb-1">
             <select id="status-filter" class="form-select">
@@ -92,7 +92,7 @@
     <div class="table-scroll-x-wrapper">
         <div id="inventory-table">
 
-                <div class="row py-2 fw-bold border-bottom">
+                <div class="row py-2 fw-bold border-bottom " style="text-align: left;">
                     <div class="col-1 col-date sort-header" data-sort="date">Date</div>
                     <div class="col-1 col-type" data-sort="type">Type</div>
                     <div class="col-1 col-document sort-header" data-sort="document_id">Document Id</div>
@@ -107,7 +107,7 @@
                 </div>        
 
          <!-- Table body (dynamic) -->
-            <div id="inventory-data">
+            <div id="inventory-data" style="text-align: left;">
             <!-- Data will be injected here by JavaScript -->
             </div>
         </div>
@@ -167,9 +167,9 @@
                             <div class="col-1 col-draft small">${item.draft_id}</div>
                             <div class="col-1 col-productId small">${item.product_id}</div>
                             <div class="col-2 col-name small">${item.name}</div>
-                            <div class="col-1 col-total small">${(item.toal).toFixed(1)}</div>
                             <div class="col-1 col-units small">${item.Units}</div>
                             <div class="col-1 col-price small">${(item.price).toFixed(1)}</div>
+                            <div class="col-1 col-total small">${(item.toal).toFixed(1)}</div>
                             <div class="col-1 col-note small">${item.note}</div>
                             <div class="col-1 col-status small">${item.status}</div>
                             <div class="resize-handle"></div>
