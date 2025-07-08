@@ -200,6 +200,7 @@
                 .then(data => {
                 
                     renderTable(data.data);
+                    setupResizableRows();
                     renderPagination(data.total_pages, data.currentPage);
                     applyColumnVisibility();
                 })
