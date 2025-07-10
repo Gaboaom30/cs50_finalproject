@@ -67,7 +67,6 @@ def index():
         credit_by_doc[key]["total"] += row["amount"]
         credit_by_doc[key]["items"].append(row)
 
-    # Step 3: Filter only those with credit still pending
     cd = []
     for data in credit_by_doc.values():
         if data["total"] > 0:
