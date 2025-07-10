@@ -5,7 +5,7 @@
 {% endblock %}
 
 {% block h1 %}
-    <h1>Inventory Movements</h1>
+    <h1 class="text-center my-4">Inventory Movements</h1>
 {% endblock %}
 
 {% block main %}
@@ -201,21 +201,40 @@
             container.appendChild(prev);
 
             // Numbered buttons
-            if (totalPages > 10) {
-                totalPages = 10; // Limit to 20 pages for simplicity
-            }    
-            
-            for (let i = 1; i <= totalPages; i++) {
-                const btn = document.createElement("button");
-                btn.textContent = i;
-                btn.className = `btn ${i === currentPageParam ? "btn-primary" : "btn-outline-primary"}`;
-                btn.addEventListener("click", () => {
-                    currentPage = i;
+                if (currentPageParam >= 4) {
+                const first = document.createElement("button");
+                first.textContent = "1";
+                first.className = `btn ${currentPageParam === 1 ? "btn-primary" : "btn-outline-primary"}`;
+                first.addEventListener("click", () => {
+                    currentPage = 1;
                     runSearch();
                 });
-                container.appendChild(btn);
+                container.appendChild(first);
             }
 
+            for(let i = -2; i <= 2; i++) {
+                if (currentPageParam + i > 0 && currentPageParam + i <= totalPages) {
+                    const btn = document.createElement("button");
+                    btn.textContent = currentPageParam + i;
+                    btn.className = `btn ${currentPageParam + i === currentPage ? "btn-primary" : "btn-outline-primary"}`;
+                    btn.addEventListener("click", () => {
+                        currentPage = currentPageParam + i;
+                        runSearch();
+                    });
+                    container.appendChild(btn);
+                }
+            }
+
+            if (currentPageParam <= totalPages - 3) {
+                const last = document.createElement("button");
+                last.textContent = totalPages;
+                last.className = `btn ${currentPageParam === totalPages ? "btn-primary" : "btn-outline-primary"}`;
+                last.addEventListener("click", () => {
+                    currentPage = totalPages;
+                    runSearch();
+                });
+                container.appendChild(last);
+            }
             // Next button
             const next = document.createElement("button");
             next.textContent = "Next";

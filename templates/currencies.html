@@ -2,32 +2,32 @@
 {% block title %}Currencies{% endblock %}
 
 {% block h1 %}
-    <h1>Inventory</h1>
+    <h1 class="text-center my-4">Currencies</h1>
 {% endblock %}
 
 {% block main %}
-<div class="container text-center justify-content-center mt-4">
+<div class="container text-center mt-4">
     <div class="row">
-        <div name="currencies" class="col-3" style="text-align: left;">
+        <div name="currencies" class="col-12 col-lg-3 mb-4" style="text-align: left;">
             <h4>Currencies</h4>
             <div class="container mt-4">
                 <div class="row fw-bold " style="text-align: left;">
-                    <div class="col">Code</div>
-                    <div class="col">Name</div>
-                    <div class="col">Balance</div>
+                    <div class="col small">Code</div>
+                    <div class="col small">Name</div>
+                    <div class="col small">Balance</div>
                 </div>          
                     
             {% for currency in currencies %}
                 <div class="row" style="text-align: left;">
-                    <div class="col">{{ currency.Id }}</div>
-                    <div class="col">{{ currency.name }}</div>
-                    <div class="col">{{ currency.balance }}</div>
+                    <div class="col small">{{ currency.Id }}</div>
+                    <div class="col small">{{ currency.name }}</div>
+                    <div class="col small">{{ currency.balance }}</div>
                 </div>
             {% endfor %}      
             </div>       
         </div>
         
-        <div name="currencies_movements" class="col-9">
+        <div name="currencies_movements" class="col-12 col-lg-9">
             <h4 class="mb-4" style="text-align: left;">Movements</h4>
             <div class="row mb-4 justify-content-center">
                 <div class="col-12 col-md-2">
@@ -59,28 +59,60 @@
                 </div>
             </div>
 
+            <div class="mb-3">
+                <input type="checkbox" class="toggle-col btn-check" id="btn-check-1" data-target="col-date" autocomplete="off" checked>
+                <label class="btn btn-sm" for="btn-check-1">Date</label>
+
+                <input type="checkbox" class="toggle-col btn-check" id="btn-check-2" data-target="col-docId" autocomplete="off" checked>
+                <label class="btn btn-sm" for="btn-check-2">Document Id</label>
+
+                <input type="checkbox" class="toggle-col btn-check" id="btn-check-3" data-target="col-draftId" autocomplete="off" checked>
+                <label class="btn btn-sm" for="btn-check-3">Draft Id</label>
+
+                <input type="checkbox" class="toggle-col btn-check" id="btn-check-4" data-target="col-code" autocomplete="off" checked>
+                <label class="btn btn-sm" for="btn-check-4">Code</label>
+
+                <input type="checkbox" class="toggle-col btn-check" id="btn-check-5" data-target="col-currency" autocomplete="off" checked>
+                <label class="btn btn-sm" for="btn-check-5">Currency</label>
+
+                <input type="checkbox" class="toggle-col btn-check" id="btn-check-6" data-target="col-amount" autocomplete="off" checked>
+                <label class="btn btn-sm" for="btn-check-6">Amount</label>
+            </div>
+
+
             <div class="table-scroll-x-wrapper">
                 <div id="inventory-table">
-                    <div class="container mt-4">
-                <div class="row fw-bold" style="text-align: left;">
-                    <div class="col sort-header" data-sort="date">Date</div>
-                    <div class="col sort-header" data-sort="document_id">Document Id</div>
-                    <div class="col sort-header" data-sort="draft_id">Draft Id</div>
-                    <div class="col sort-header" data-sort="payment_method_id">Code</div>
-                    <div class="col sort-header" data-sort="name">Currency</div>
-                    <div class="col sort-header" data-sort="amount">Amount</div>
-                    
-                </div>          
-                    
-                <div id="inventory-data" style="text-align: left;">
-                    
-                </div>
+                    <div class="mt-4 ">
+                        <div class="row fw-bold" style="text-align: left;">
+                            <div class="col-2 sort-header col-date" data-sort="date">Date</div>
+                            <div class="col-2 sort-header col-docId" data-sort="document_id">Document Id</div>
+                            <div class="col-2 sort-header col-draftId" data-sort="draft_id">Draft Id</div>
+                            <div class="col-2 sort-header col-code" data-sort="payment_method_id">Code</div>
+                            <div class="col-2 sort-header col-currency" data-sort="name">Currency</div>
+                            <div class="col-2 sort-header col-amount" data-sort="amount">Amount</div>
+                        </div>          
+                    </div>
+                    <div id="inventory-data" style="text-align: left;"> </div>
                 </div>              
             </div>      
         </div>
         <div id="pagination-controls" class="mt-3 d-flex justify-content-center gap-2 flex-wrap"></div>
     </div>
 </div>
+
+
+<style>
+    #inventory-table {
+  min-width: 1000px;
+  display: inline-block;
+}
+@media (max-width: 768px) {
+    .table-scroll-x-wrapper {
+        max-height: 45vh; /* Adjust height for smaller screens */
+    }
+}
+</style>
+</style>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
@@ -102,7 +134,7 @@
                 const targetClass = toggle.dataset.target;
                 const cols = document.querySelectorAll(`.${targetClass}`);
                 cols.forEach(col => {
-                    col.style.display = toggle.checked ? "block" : "none";
+                    col.style.display = toggle.checked ? "" : "none";
                 });
             });
         }
@@ -112,12 +144,12 @@
                 data.forEach(item => {
                     html += `
                         <div class="row resizable-row py-2 border-bottom">
-                            <div class="col">${item.date}</div>
-                            <div class="col">${item.document_id}</div>
-                            <div class="col">${item.draft_id}</div>
-                            <div class="col">${item.payment_method_id}</div>
-                            <div class="col">${item.name}</div>
-                            <div class="col">${(item.amount).toFixed(1)}</div>
+                            <div class="col-2 col-date">${item.date}</div>
+                            <div class="col-2 col-docId">${item.document_id}</div>
+                            <div class="col-2 col-draftId">${item.draft_id}</div>
+                            <div class="col-2 col-code">${item.payment_method_id}</div>
+                            <div class="col-2 col-currency">${item.name}</div>
+                            <div class="col-2 col-amount">${(item.amount).toFixed(1)}</div>
                             <div class="resize-handle"></div>
                         </div>
                     `;
@@ -148,15 +180,39 @@
             container.appendChild(prevButton);
 
             // numbered buttons
-            for (let i = 1; i <= totalPages; i++) {
-                const button = document.createElement("button");
-                button.textContent = i;
-                button.className = `btn ${i === currentPageParam ? "btn-primary" : "btn-outline-primary"}`;
-                button.addEventListener("click", () => {
-                    currentPage = i;
-                    runsearch();
+                if (currentPageParam >= 4) {
+                const first = document.createElement("button");
+                first.textContent = "1";
+                first.className = `btn ${currentPageParam === 1 ? "btn-primary" : "btn-outline-primary"}`;
+                first.addEventListener("click", () => {
+                    currentPage = 1;
+                    runSearch();
                 });
-                container.appendChild(button);
+                container.appendChild(first);
+            }
+
+            for(let i = -2; i <= 2; i++) {
+                if (currentPageParam + i > 0 && currentPageParam + i <= totalPages) {
+                    const btn = document.createElement("button");
+                    btn.textContent = currentPageParam + i;
+                    btn.className = `btn ${currentPageParam + i === currentPage ? "btn-primary" : "btn-outline-primary"}`;
+                    btn.addEventListener("click", () => {
+                        currentPage = currentPageParam + i;
+                        runSearch();
+                    });
+                    container.appendChild(btn);
+                }
+            }
+
+            if (currentPageParam <= totalPages - 3) {
+                const last = document.createElement("button");
+                last.textContent = totalPages;
+                last.className = `btn ${currentPageParam === totalPages ? "btn-primary" : "btn-outline-primary"}`;
+                last.addEventListener("click", () => {
+                    currentPage = totalPages;
+                    runSearch();
+                });
+                container.appendChild(last);
             }
 
 
@@ -231,6 +287,10 @@
                     endDateInput.style.display = "none";
                 }
                 runsearch();
+            });
+
+            document.querySelectorAll(".toggle-col").forEach(toggle => {
+                toggle.addEventListener("change", applyColumnVisibility);
             });
 
             setupResizableRows();

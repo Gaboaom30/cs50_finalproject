@@ -6,7 +6,7 @@ from flask import Flask, flash, redirect, render_template, request, session, g, 
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timedelta
-
+from collections import defaultdict
 
 # Configure application
 app = Flask(__name__)
@@ -42,32 +42,42 @@ def index():
     db = get_db()
 
     # Fetch credit sales and available payment methods
-    cd = db.execute("""
+    rows = db.execute("""
         SELECT 
-            inventory_movements.id AS movement_id,
             inventory_movements.draft_id,
-            inventory_movements.document_id as document_id,
+            inventory_movements.document_id AS document_id,
             inventory_movements.name AS name,
             inventory_movements.units AS units,
-            currencies_movements.amount AS amount
+            currencies_movements.amount AS amount,
+            currencies.name AS payment_method,
+            inventory_movements.note AS note
         FROM inventory_movements
         JOIN currencies_movements  
             ON inventory_movements.document_id = currencies_movements.document_id
             AND inventory_movements.draft_id = currencies_movements.draft_id
         JOIN currencies 
             ON currencies.id = currencies_movements.payment_method_id
-        WHERE inventory_movements.type = 'sale'
-        AND currencies.name = 'credit' AND currencies_movements.amount > 0;
+        WHERE inventory_movements.type = 'sale' AND currencies_movements.name = 'credit';
     """).fetchall()
+
+    credit_by_doc = defaultdict(lambda: {"total": 0, "items": []})
+
+    for row in rows:
+        key = (row["document_id"], row["draft_id"])
+        credit_by_doc[key]["total"] += row["amount"]
+        credit_by_doc[key]["items"].append(row)
+
+    # Step 3: Filter only those with credit still pending
+    cd = []
+    for data in credit_by_doc.values():
+        if data["total"] > 0:
+            cd.extend(data["items"])
 
     pm = db.execute("SELECT * FROM currencies").fetchall()
 
     delibery = db.execute("SELECT * FROM inventory_movements WHERE status = 'to deliver'").fetchall()
 
     return render_template("index.html", cd=cd, pm=pm, delivery=delibery)
-
-
-
 
 @app.route("/inventory")
 def inventory():
@@ -407,6 +417,11 @@ def index_payment():
                     flash("Payment method not found.")
                     return redirect("/")
 
+                db.execute("INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, -?, ?, ?, ?, ?)",
+                    ("credit", payment["amount"],
+                    draft_id, datetime.now(), movement_id, payment_method_id)
+                )
+
                 db.execute(
                     "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)",
                     (payment["method"], payment["amount"],
@@ -418,7 +433,7 @@ def index_payment():
                     "UPDATE currencies SET balance = balance + ? WHERE name = ?",
                     (payment["amount"], payment["method"])
                 )
-                db.execute("UPDATE currencies_movements SET amount = amount - ? WHERE document_id = ? AND draft_id = ? AND name = 'credit'", (payment["amount"], movement_id, draft_id))
+                
                 db.execute("UPDATE currencies SET balance = balance - ? WHERE name = 'credit'", (payment["amount"],))
             db.commit()
 
