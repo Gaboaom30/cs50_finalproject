@@ -3,6 +3,15 @@
 
 {% block h1 %}
     <h1 class="text-center my-4">Currencies</h1>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-warning" role="alert">
+                {% for message in messages %}
+                    <div>{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 {% endblock %}
 
 {% block main %}
@@ -20,11 +29,37 @@
             {% for currency in currencies %}
                 <div class="row" style="text-align: left;">
                     <div class="col small">{{ currency.Id }}</div>
-                    <div class="col small">{{ currency.name }}</div>
+                    <div class="col small">{{ currency.name | capitalize }}</div>
                     <div class="col small">{{ currency.balance }}</div>
                 </div>
             {% endfor %}      
-            </div>       
+            </div>   
+            <div class="row mt-4">
+                <div class="col-12 col-md-3 mt-4">
+                    <button id="add-currency" class="btn btn-outline-dark">Add</button>
+                </div>
+                <div class="col-12 col-md-3 mt-4">
+                    <button id="delete-currency" class="btn btn-outline-dark">Delete</button>
+                </div>
+            </div>
+
+            <form id="form-c" method="POST">
+                    <div class="row">
+                    <div class="col-8 p-2">
+                        <input type="text" name="currency" id="currency" class="form-control" style="display: none;">
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-4 p-2">
+                        <button id="save-currency" type="submit" class="btn btn-primary" style="display: none;">Save</button>
+                    </div> 
+                    <div class="col-4 p-2">
+                        <button id="cancel-currency" type="button" class="btn btn-secondary" style="display: none;">Cancel</button>
+                    </div>
+                </div>
+            </form>
+
         </div>
         
         <div name="currencies_movements" class="col-12 col-lg-9">
@@ -126,8 +161,47 @@
         const endDateInput = document.getElementById("end-date");
         let currentPage = 1;
 
+        const addCurrency = document.getElementById("add-currency");
+        const saveCurrency = document.getElementById("save-currency");
+        const cancelCurrency = document.getElementById("cancel-currency");
+        const currencyInput = document.getElementById("currency");
+        const deleteCurrency = document.getElementById("delete-currency");
+        const formCurrency = document.getElementById("form-c");
         let currentSortField = "";
         let currentSortDirection = "asc"; // or "desc"
+
+        deleteCurrency.addEventListener("click", () => {
+            currencyInput.style.display = "block";
+            currencyInput.type = "Number"
+            currencyInput.placeholder = "Enter Currency ID";
+            formCurrency.action = "/deleteCurrency";
+            formCurrency.method = "POST";
+            saveCurrency.style.display = "block";
+            cancelCurrency.style.display = "block";
+            addCurrency.style.display = "none";
+            deleteCurrency.style.display = "none";
+        });
+
+        addCurrency.addEventListener("click", () => {
+            currencyInput.style.display = "block";
+            currencyInput.type = "text";
+            currencyInput.placeholder = "Enter Currency Name";
+            formCurrency.action = "/addCurrency";
+            formCurrency.method = "POST";
+            saveCurrency.style.display = "block";
+            cancelCurrency.style.display = "block";
+            deleteCurrency.style.display = "none";
+            addCurrency.style.display = "none";
+        });
+        cancelCurrency.addEventListener("click", () => {
+            currencyInput.style.display = "none";
+            saveCurrency.style.display = "none";
+            cancelCurrency.style.display = "none";
+            addCurrency.style.display = "block";
+            deleteCurrency.style.display = "block";
+            currencyInput.value = ""; // Clear input
+        });
+
 
         function applyColumnVisibility() {
             document.querySelectorAll(".toggle-col").forEach(toggle => {
@@ -144,12 +218,12 @@
                 data.forEach(item => {
                     html += `
                         <div class="row resizable-row py-2 border-bottom">
-                            <div class="col-2 col-date">${item.date}</div>
-                            <div class="col-2 col-docId">${item.document_id}</div>
-                            <div class="col-2 col-draftId">${item.draft_id}</div>
-                            <div class="col-2 col-code">${item.payment_method_id}</div>
-                            <div class="col-2 col-currency">${item.name}</div>
-                            <div class="col-2 col-amount">${(item.amount).toFixed(1)}</div>
+                            <div class="col-2 small col-date">${formatDate(item.date)}</div>
+                            <div class="col-2 small col-docId">${item.document_id}</div>
+                            <div class="col-2 small col-draftId">${item.draft_id}</div>
+                            <div class="col-2 small col-code">${item.payment_method_id}</div>
+                            <div class="col-2 small col-currency">${capitalize(item.name)}</div>
+                            <div class="col-2 small col-amount">${(item.amount).toFixed(1)}</div>
                             <div class="resize-handle"></div>
                         </div>
                     `;

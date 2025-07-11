@@ -90,6 +90,22 @@
     </footer>
     <script>
 
+    function capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    function formatDate(dateString) {
+      const d = new Date(dateString);
+      return d.getFullYear() + "-" +
+          String(d.getMonth() + 1).padStart(2, '0') + "-" +
+          String(d.getDate()).padStart(2, '0') + " " +
+          String(d.getHours()).padStart(2, '0') + ":" +
+          String(d.getMinutes()).padStart(2, '0') + ":" +
+          String(d.getSeconds()).padStart(2, '0');
+      }
+
+
      function setupResizableRows() {
     document.querySelectorAll('.resizable-row').forEach(row => {
         if (row.dataset.resizable === "true") return;  // Avoid rebinding

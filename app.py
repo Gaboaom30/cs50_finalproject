@@ -85,12 +85,159 @@ def inventory():
     categories = sorted(set(item["category"] for item in inv))
     return render_template("inventory.html", categories=categories)
 
+@app.route("/addProduct", methods=["POST"])
+def addProduct():
+    if request.method == "POST":
+        db = get_db()
+        code = request.form.get("product-code", "").strip()
+        name = request.form.get("product-name", "").strip()
+        price = request.form.get("product-price", "").strip()
+        category = request.form.get("product-category", "").strip()
+        quantity = 0  # Default quantity to 0 for new products
+
+        if not code or not name or not price or not category:
+            flash("All fields are required.")
+            return redirect("/inventory")
+        try:
+            price = float(price)
+        except ValueError:
+            flash("Price must be a number.")
+            return redirect("/inventory")
+        if price < 0:
+            flash("Price must be a positive number.")
+            return redirect("/inventory")
+        # Check if the product already exists
+        existing_product = db.execute("SELECT * FROM inventory WHERE id = ?", (code,)).fetchone()
+        if existing_product:
+            flash("Product with this code already exists.")
+            return redirect("/inventory")
+        # Insert the new product
+        db.execute("INSERT INTO inventory (id, name, price, category, quantity) VALUES (?, ?, ?, ?, ?)",
+                   (code, name, price, category, quantity))
+        db.commit()
+        flash(f"Product '{name}' added successfully.")
+        return redirect("/inventory")
+    return redirect("/inventory")
+
+@app.route("/editProduct", methods=["POST"])
+def editProduct():
+    if request.method == "POST":
+        db = get_db()
+        code = request.form.get("edit-id", "").strip()
+        name = request.form.get("product-name", "").strip()
+        price = request.form.get("product-price", "").strip()
+        category = request.form.get("product-category", "").strip()
+
+        print("DEBUG:", code, name, price, category)  # <- agrega esto
+
+        if not code or not name or not price or not category:
+            flash("All fields are required.")
+            return redirect("/inventory")
+        try:
+            price = float(price)
+        except ValueError:
+            flash("Price must be a number.")
+            return redirect("/inventory")
+        if price < 0:
+            flash("Price must be a positive number.")
+            return redirect("/inventory")
+
+        # Check if the product exists
+        existing_product = db.execute("SELECT * FROM inventory WHERE id = ?", (code,)).fetchone()
+        if not existing_product:
+            flash("Product does not exist.")
+            return redirect("/inventory")
+
+        # Update the product
+        db.execute("UPDATE inventory SET name = ?, price = ?, category = ? WHERE id = ?",
+                   (name, price, category, code))
+        db.commit()
+        flash(f"Product '{name}' updated successfully.")
+        return redirect("/inventory")
+    return redirect("/inventory")
+
+@app.route("/deleteProduct", methods=["POST"])
+def deleteProduct():
+    if request.method == "POST":
+        db = get_db()
+        code = request.form.get("delete-id", "").strip()
+
+        if not code:
+            flash("Product code cannot be empty.")
+            return redirect("/inventory")
+
+        # Check if the product exists
+        existing_product = db.execute("SELECT * FROM inventory WHERE id = ?", (code,)).fetchone()
+        if not existing_product:
+            flash("Product does not exist.")
+            return redirect("/inventory")
+
+        # Check that the product quantity is 0
+        if int(existing_product["quantity"]) != 0:
+            flash("Product quantity must be 0 to delete.")
+            return redirect("/inventory")
+
+        # Delete the product
+        db.execute("DELETE FROM inventory WHERE id = ?", (code,))
+        db.commit()
+        flash(f"Product with code '{code}' deleted successfully.")
+        return redirect("/inventory")
+    return redirect("/inventory")
+    
 @app.route("/currencies")
 def currencies():
     db = get_db()
     currencies = db.execute("SELECT * FROM currencies").fetchall()
     currencies_movements = db.execute("SELECT * FROM currencies_movements").fetchall()
     return render_template("currencies.html", currencies=currencies, currencies_movements=currencies_movements)
+
+@app.route("/addCurrency", methods=["POST"])
+def addCurrency():
+    if request.method == "POST":
+        db = get_db()
+        currency_name = request.form.get("currency").strip()
+        if not currency_name:
+            flash("Currency name cannot be empty.")
+            return redirect("/currencies")
+        
+        # Check if the currency already exists
+        existing_currency = db.execute("SELECT * FROM currencies WHERE name = ?", (currency_name,)).fetchone()
+        if existing_currency:
+            flash("Currency already exists.")
+            return redirect("/currencies")
+
+        # Insert the new currency
+        db.execute("INSERT INTO currencies (name, balance) VALUES (?, 0)", (currency_name,))
+        db.commit()
+        flash(f"Currency '{currency_name}' added successfully.")
+        return redirect("/currencies")
+    return redirect("/currencies")
+
+@app.route("/deleteCurrency", methods=["POST"])
+def deleteCurrency():
+    if request.method == "POST":
+        db = get_db()
+        currency_Id = request.form.get("currency").strip()
+        if not currency_Id:
+            flash("Currency ID cannot be empty.")
+            return redirect("/currencies")
+
+        # Check if the currency exists
+        existing_currency = db.execute("SELECT * FROM currencies WHERE id = ?", (currency_Id,)).fetchone()
+        if not existing_currency:
+            flash("Currency does not exist.")
+            return redirect("/currencies")
+
+        # check that currency balance is 0
+        if existing_currency["balance"] != 0:
+            flash("Currency balance must be 0 to delete.")
+            return redirect("/currencies")
+
+        # Delete the currency
+        db.execute("DELETE FROM currencies WHERE id = ?", (currency_Id,))
+        db.commit()
+        flash(f"Currency with ID '{currency_Id}' deleted successfully.")
+        return redirect("/currencies")
 
 @app.route("/currencies_movements")
 def currencies_movements():

@@ -6,6 +6,15 @@
 
 {% block h1 %}
     <h1 class="text-center my-4">Inventory</h1>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-warning" role="alert">
+                {% for message in messages %}
+                    <div>{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 {% endblock %}
 
 {% block main %}
@@ -16,13 +25,42 @@
             <input type="text" id="search-input" class="form-control" placeholder="Search by name or code">
         </div>
         <div class="col-12 col-md-4">
-            <select id="category-filter" class="form-select">
+            <select id="category-filter" class="form-select mb-3">
                 <option value="">All Categories</option>
                     {% for category in categories %}
                         <option value="{{ category }}">{{ category }}</option>
                     {% endfor %}
             </select>
         </div>
+        <div class="col-12 col-md-2">
+            <button id="add-product" class="btn btn-outline-dark mb-3">Add Product</button>
+        </div>
+        <div class="row">
+                <form id="product-form" class="d-none">
+                    <div class="row">
+                        <div class="col-12 col-md-2">
+                            <input type="text" name="product-code" id="product-code" class="form-control" placeholder="Product Code" required>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <input type="text" name="product-category" id="product-category" class="form-control" placeholder="Category" required>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <input type="text" name="product-name" id="product-name" class="form-control" placeholder="Product Name" required>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <input type="number" name="product-price" id="product-price" class="form-control" placeholder="Price" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="row mt-2 justify-content-center">
+                        <div class="col-12 col-md-1">
+                            <button type="submit" id="save-add-product" class="btn btn-primary mt-2">Save</button>
+                        </div>
+                        <div class="col-12 col-md-1">
+                            <button type="button" class="btn btn-secondary mt-2" id="cancel-add-product">Cancel</button>
+                       </div>
+                    </div>
+                </form>
+            </div>
     </div>
 
     <div class="mb-3">
@@ -48,10 +86,11 @@
         <div id="inventory-table">
         <div class="row fw-bold border-bottom pb-2" style="text-align: left;">
             <div class="col-2 col-code">Code</div>
-            <div class="col-3 col-category">Category</div>
+            <div class="col-2 col-category">Category</div>
             <div class="col-4 sort-header col-name" data-sort="Name">Name</div>
             <div class="col-1 sort-header col-price" data-sort="Price">Price</div>
             <div class="col-1 sort-header col-quantity" data-sort="Quantity">Stock</div>
+            <div class="col-2">Actions</div>
         </div>
 
         <!-- Table body (dynamic) -->
@@ -88,6 +127,48 @@
         let currentSortField = "";
         let currentSortDirection = "asc"; // or "desc"
 
+        const addProduct = document.getElementById("add-product");
+        const productForm = document.getElementById("product-form");
+        const productName = document.getElementById("product-name");
+        const productCode = document.getElementById("product-code");
+        const productPrice = document.getElementById("product-price");
+        const productCategory = document.getElementById("product-category");
+        const cancelAddProduct = document.getElementById("cancel-add-product");
+        const saveAddProduct = document.getElementById("save-add-product");
+
+        addProduct.addEventListener("click", () => {
+            productForm.classList.remove("d-none");
+            productCode.disabled = false; // Enable code field for adding new product
+            productName.value = "";
+            productCode.value = "";
+            productPrice.value = "";
+            productCategory.value = "";
+            productCategory.disabled = false; // Enable category field for adding new product
+            productPrice.disabled = false; // Enable price field for adding new product
+            productName.disabled = false; // Enable name field for adding new product
+            productForm.action = "/addProduct"; // Set action for adding new product
+            productForm.method = "POST"; // Set method for adding new product
+            productName.focus();
+        });
+
+        cancelAddProduct.addEventListener("click", () => {
+            productForm.classList.add("d-none");
+            productCode.disabled = false;
+            productName.value = "";
+            productCode.value = "";
+            productPrice.value = "";
+            productCategory.value = "";
+
+            const hidden = productForm.querySelector("input[name='edit-id']");
+            if (hidden) hidden.remove();
+        });
+
+        saveAddProduct.addEventListener("click", () => {
+            productForm.classList.add("d-none");
+            productForm.method = "POST";
+
+        }); 
+
         function applyColumnVisibility() {
             document.querySelectorAll(".toggle-col").forEach(toggle => {
                 const targetClass = toggle.dataset.target;
@@ -104,11 +185,15 @@
                     html += `
                         <div class="row resizable-row py-2 border-bottom">
 
-                            <div class="col-2 col-code">${item.Id}</div>
-                            <div class="col-3 col-category">${item.Category}</div>
-                            <div class="col-4 col-name">${item.Name}</div>
-                            <div class="col-1 col-price">${parseFloat(item.Price).toFixed(2)}</div>
-                            <div class="col-1 col-quantity">${item.Quantity}</div>
+                            <div class="col-2 small col-code">${item.Id}</div>
+                            <div class="col-2 small col-category">${item.Category}</div>
+                            <div class="col-4 small col-name">${item.Name}</div>
+                            <div class="col-1 small col-price">${parseFloat(item.Price).toFixed(2)}</div>
+                            <div class="col-1 small col-quantity">${item.Quantity}</div>
+                            <div class="col-2">
+                                <button class="btn btn-sm btn-outline-secondary edit-product" data-id="${item.Id}">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger delete-product" data-id="${item.Id}">Delete</button>
+                            </div>
                             <div class="resize-handle"></div>
                         </div>
                     `;
@@ -118,6 +203,74 @@
                 html = `<div class="text-muted mt-3">No results found.</div>`;                
             }
                     table.innerHTML = html;
+
+            // Add event listeners for edit and delete buttons
+            document.querySelectorAll(".edit-product").forEach(button => {
+                button.addEventListener("click", () => {
+                    const id = button.dataset.id;
+                    const row = button.closest(".row");
+                    const code = row.querySelector(".col-code").textContent;
+                    const category = row.querySelector(".col-category").textContent;
+                    const name = row.querySelector(".col-name").textContent;
+                    const price = row.querySelector(".col-price").textContent;
+
+                    productForm.classList.remove("d-none");
+                    productForm.action = `/editProduct`;
+                    productForm.method = "POST";
+
+                    productCode.value = code;
+                    productCode.disabled = true; // Disable code field for editing
+                    productCategory.value = category;
+                    productName.value = name;
+                    productPrice.value = price;
+                    productName.focus();
+
+                    const oldHidden =productForm.querySelector("input[name='edit-id']");
+                    if (oldHidden)  oldHidden.remove();
+
+                    const hiddenInput = document.createElement("input");
+                    hiddenInput.type = "hidden";
+                    hiddenInput.name = "edit-id";
+                    hiddenInput.value = id;
+                    productForm.appendChild(hiddenInput);
+                });
+            });
+
+            document.querySelectorAll(".delete-product").forEach(button => {
+                button.addEventListener("click", () => {
+                    const id = button.dataset.id;
+                    const row = button.closest(".row");
+                    const code = row.querySelector(".col-code").textContent;
+                    const name = row.querySelector(".col-name").textContent;
+                    const category = row.querySelector(".col-category").textContent;
+                    const price = row.querySelector(".col-price").textContent;
+                    const confirmMessage = `Are you sure you want to delete the product "${name}" (Code: ${code})?`;
+
+                    productForm.classList.remove("d-none");
+                    productForm.action = `/deleteProduct`;
+                    productForm.method = "POST";
+
+                    productCode.value = code;
+                    productCode.disabled = true; // Disable code field for deletion
+                    productCategory.value = category;
+                    productCategory.disabled = true; // Disable category field for deletion
+                    productName.value = name;
+                    productName.disabled = true; // Disable name field for deletion
+                    productPrice.value = price;
+                    productPrice.disabled = true; // Disable price field for deletion
+
+                    const oldHidden = productForm.querySelector("input[name='edit-id']");
+                    if (oldHidden) oldHidden.remove();
+
+                    const hiddenInput = document.createElement("input");
+                    hiddenInput.type = "hidden";
+                    hiddenInput.name = "delete-id";
+                    hiddenInput.value = id;
+                    productForm.appendChild(hiddenInput);
+
+                    });
+            
+            });
         }
 
          function renderPagination(totalPages, currentPageParam) {

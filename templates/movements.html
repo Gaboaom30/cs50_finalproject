@@ -161,8 +161,8 @@
                 data.forEach(item => {
                     html += `
                         <div class="row resizable-row py-2 border-bottom">
-                            <div class="col-1 col-date small">${item.date}</div>
-                            <div class="col-1 col-type small">${item.type}</div>
+                            <div class="col-1 col-date small">${formatDate(item.date)}</div>
+                            <div class="col-1 col-type small">${capitalize(item.type)}</div>
                             <div class="col-1 col-document small">${item.document_id}</div>
                             <div class="col-1 col-draft small">${item.draft_id}</div>
                             <div class="col-1 col-productId small">${item.product_id}</div>
@@ -171,7 +171,7 @@
                             <div class="col-1 col-price small">${(item.price).toFixed(1)}</div>
                             <div class="col-1 col-total small">${(item.toal).toFixed(1)}</div>
                             <div class="col-1 col-note small">${item.note}</div>
-                            <div class="col-1 col-status small">${item.status}</div>
+                            <div class="col-1 col-status small">${capitalize(item.status)}</div>
                             <div class="resize-handle"></div>
                         </div>
                     `;

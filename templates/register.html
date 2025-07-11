@@ -50,7 +50,7 @@
         <select class="form-select" name="pm" id="pmSelect">
             <option selected disabled>Payment method</option>
             {% for currency in pm %}
-                <option value="{{ currency['name'] }}">{{ currency['name'] }}</option>
+                <option value="{{ currency['name'] }}">{{ currency['name'] | capitalize }}</option>
             {% endfor %}
             <option value="multiple">Multiple payment methods</option>
         </select>
@@ -85,7 +85,7 @@
         </div>
         {% for movement in session["draft_movements"] %}
             <div class="row -center mb-3">
-                <div class="col-12 col-md-1 small">{{ movement["typem"] }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["typem"] | capitalize }}</div>
                 <div class="col-12 col-md-2 small">{{ movement["code"] }}</div>
                 <div class="col-12 col-md-4 small">{{ movement["name"] }}</div>
                 <div class="col-12 col-md-1 small">{{ movement["qty"] }}</div>
@@ -107,7 +107,7 @@
     <div class="container mt-5">
         {% for method, amount in grouped_pm.items() %}
             <div class="row align-items-center mb-2">
-                <div class="col-1 small"><strong>{{ method }}</strong></div>
+                <div class="col-1 small"><strong>{{ method | capitalize}}</strong></div>
                 <div class="col-1 small"><strong>{{ "%.2f"|format(amount) }}</strong></div>
             </div>
         {% endfor %}

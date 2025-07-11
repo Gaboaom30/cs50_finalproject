@@ -24,26 +24,26 @@
     <!-- Table header (static) -->
      
     <div class="row fw-bold border-bottom pb-2" style="text-align: left;">
-        <div class="col-1 small">Document</div>
-        <div class="col-1 small">Draft_id</div>
-        <div class="col-3 small">Name</div>
-        <div class="col-1 small">Units</div>
-        <div class="col-1 small">Amount</div>
-        <div class="col small">Note</div>
-        <div class="col-3 small">Action</div>
+        <div class="col-1">Document</div>
+        <div class="col-1">Draft_id</div>
+        <div class="col-3">Name</div>
+        <div class="col-1">Units</div>
+        <div class="col-1">Amount</div>
+        <div class="col">Note</div>
+        <div class="col-3">Action</div>
     </div>
 
     <!-- Table body (dynamic) -->
     <div id="credit-table">
         {% for row in cd %}
             <div class="row py-2 border-bottom" style="text-align: left;">
-                <div class="col-1 small">{{ row.document_id }}</div>
-                <div class="col-1 small">{{ row.draft_id }}</div>
-                <div class="col-3 small">{{ row.name }}</div>
-                <div class="col-1 small">{{ row.units }}</div>
-                <div class="col-1 small">{{ row.amount }}</div>
-                <div class="col small">{{ row.note }}</div>
-                <div class="col-3 small">
+                <div class="col-1">{{ row.document_id }}</div>
+                <div class="col-1">{{ row.draft_id }}</div>
+                <div class="col-3">{{ row.name }}</div>
+                <div class="col-1">{{ row.units }}</div>
+                <div class="col-1">{{ row.amount }}</div>
+                <div class="col">{{ row.note }}</div>
+                <div class="col-3">
                     <form action="/index_payment" method="POST">
                         <input type="hidden" name="movement_id" value="{{ row.document_id }}">
                         <input type="hidden" name="draft_id" value="{{ row.draft_id }}">
@@ -68,23 +68,23 @@
     <h3 class="mb-5" style="text-align: left;"> To deliver</h3>
     <!-- Table header (static) -->
     <div class="row fw-bold border-bottom pb-2" style="text-align: left;">
-        <div class="col-1 small">Document</div>
-        <div class="col-1 small">Draft_id</div>
-        <div class="col-4 small">Name</div>
-        <div class="col-1 small">Units</div>
-        <div class="col small">Note</div>
-        <div class="col-3 small">Action</div>
+        <div class="col-1">Document</div>
+        <div class="col-1">Draft_id</div>
+        <div class="col-4">Name</div>
+        <div class="col-1">Units</div>
+        <div class="col">Note</div>
+        <div class="col-3">Action</div>
     </div>
     <!-- Table body (dynamic) -->
     <div id="to-deliver-table">
         {% for row in delivery %}
             <div class="row py-2 border-bottom" style="text-align: left;">
-                <div class="col-1 small">{{ row.document_id }}</div>
-                <div class="col-1 small">{{ row.draft_id }}</div>
-                <div class="col-4 small">{{ row.name }}</div>
-                <div class="col-1 small">{{ row.units }}</div>
-                <div class="col small">{{ row.note }}</div>
-                <div class="col-3 small">
+                <div class="col-1">{{ row.document_id }}</div>
+                <div class="col-1">{{ row.draft_id }}</div>
+                <div class="col-4">{{ row.name }}</div>
+                <div class="col-1">{{ row.units }}</div>
+                <div class="col">{{ row.note }}</div>
+                <div class="col-3">
                     <form action="/delivery" method="POST">
                         <input type="hidden" name="movement_id" value="{{ row.document_id }}">
                         <input type="hidden" name="draft_id" value="{{ row.draft_id }}">
