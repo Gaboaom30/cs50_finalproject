@@ -104,7 +104,7 @@
                 <input type="checkbox" class="toggle-col btn-check" id="btn-check-3" data-target="col-draftId" autocomplete="off" checked>
                 <label class="btn btn-sm" for="btn-check-3">Draft Id</label>
 
-                <input type="checkbox" class="toggle-col btn-check" id="btn-check-4" data-target="col-code" autocomplete="off" checked>
+                <input type="checkbox" class="toggle-col btn-check" id="btn-check-4" data-target="col-code" autocomplete="off">
                 <label class="btn btn-sm" for="btn-check-4">Code</label>
 
                 <input type="checkbox" class="toggle-col btn-check" id="btn-check-5" data-target="col-currency" autocomplete="off" checked>
@@ -121,10 +121,11 @@
                         <div class="row fw-bold" style="text-align: left;">
                             <div class="col-2 sort-header col-date" data-sort="date">Date</div>
                             <div class="col-2 sort-header col-docId" data-sort="document_id">Document Id</div>
-                            <div class="col-2 sort-header col-draftId" data-sort="draft_id">Draft Id</div>
-                            <div class="col-2 sort-header col-code" data-sort="payment_method_id">Code</div>
+                            <div class="col-1 sort-header col-draftId" data-sort="draft_id">Draft Id</div>
+                            <div class="col-1 sort-header col-code" data-sort="payment_method_id">Code</div>
                             <div class="col-2 sort-header col-currency" data-sort="name">Currency</div>
-                            <div class="col-2 sort-header col-amount" data-sort="amount">Amount</div>
+                            <div class="col-2 col-note" data-sort="note">Note</div>
+                            <div class="col-1 sort-header col-amount" data-sort="amount">Amount</div>
                         </div>          
                     </div>
                     <div id="inventory-data" style="text-align: left;"> </div>
@@ -220,10 +221,11 @@
                         <div class="row resizable-row py-2 border-bottom">
                             <div class="col-2 small col-date">${formatDate(item.date)}</div>
                             <div class="col-2 small col-docId">${item.document_id}</div>
-                            <div class="col-2 small col-draftId">${item.draft_id}</div>
-                            <div class="col-2 small col-code">${item.payment_method_id}</div>
+                            <div class="col-1 small col-draftId">${item.draft_id}</div>
+                            <div class="col-1 small col-code">${item.payment_method_id}</div>
                             <div class="col-2 small col-currency">${capitalize(item.name)}</div>
-                            <div class="col-2 small col-amount">${(item.amount).toFixed(1)}</div>
+                            <div class="col-2 small col-note">${capitalize(item.note)}</div>
+                            <div class="col-1 small col-amount">${(item.amount).toFixed(1)}</div>
                             <div class="resize-handle"></div>
                         </div>
                     `;
