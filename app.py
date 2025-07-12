@@ -762,6 +762,169 @@ def register():
 
         return render_template("register.html", pm=pm, grouped_pm=grouped_pm)
 
+@app.route("/register_inventoryM", methods=["POST"])
+def register_inventoryM():
+    if request.method == "POST":
+        db = get_db()
+
+        if "current_group_id" not in session:
+            session["current_group_id"] = 0  # first time starting
+        group_id = session["current_group_id"]
+
+        typem = request.form.get("typem")
+        if not typem:
+            flash("Please select a type.")
+            return redirect("/register")
+
+        if typem not in ["output", "input"]:
+            flash("Invalid type selected.")
+            return redirect("/register")
+        
+        code = request.form.get("code")
+        if not code:
+            flash("Please enter a code.")
+
+        checkName = db.execute("SELECT Name FROM inventory WHERE Id = ?", (code,)).fetchone()        
+        if checkName is None:
+            flash("Product not found.")
+            return redirect("/register")
+
+        name = request.form.get("search_name")
+        if not name:
+            flash("Please enter a name.")
+            return redirect("/register")
+
+        checkCode = db.execute("SELECT Id FROM inventory WHERE name = ?", (name,)).fetchone()
+        if checkCode is None:
+            flash("Product not found.")
+            return redirect("/register")
+
+        if name != checkName["Name"]:
+            flash("Product name does not match the code.")
+            return redirect("/register")
+
+        if code != checkCode["Id"]:
+            flash("Product code does not match the name.")
+            return redirect("/register")
+
+        qty = request.form.get("qty")
+        if not qty:
+            flash("Please enter a quantity.")
+            return redirect("/register")
+        try:
+            qty = int(qty)
+        except ValueError:
+            flash("Quantity must be a number.")
+            return redirect("/register")
+        if qty < 0:
+            flash("Quantity must be a positive number.")
+            return redirect("/register")
+
+        price = 0
+
+        if typem == "output":
+            qty = -qty  # Negate quantity for output movements
+
+        check_0 = db.execute("SELECT quantity FROM inventory WHERE id = ?", (code,)).fetchone()
+        if check_0 is None or check_0[0] + qty < 1:
+            flash("Product not found or out of stock.")
+            return redirect("/register")
+
+        note = request.form.get("note")
+        total = 0
+
+        status = request.form.get("status")
+        if not status:
+            flash("Please select a status.")
+            return redirect("/register")
+        if status not in ["delivered", "to deliver"]:
+            flash("Invalid status selected.")
+            return redirect("/register")
+
+        inventoryM = {
+            "typem": typem,
+            "code": code,
+            "name": name,
+            "qty": qty,
+            "price": price,
+            "total": total,
+            "note": note,
+            "status": status,
+            "pm_id": group_id
+        }
+
+        if "draft_inventoryM" not in session:
+            session["draft_inventoryM"] = []
+        draft = session["draft_inventoryM"]
+        draft.append(inventoryM)
+        session["draft_inventoryM"] = draft
+        print("Current draft_inventoryM:", session.get("draft_inventoryM"))
+        session["current_group_id"] += 1
+        session.modified = True
+
+        return redirect("/register")
+
+@app.route("/register_currencyM", methods=["POST"])
+def register_currencyM():
+    if request.method == "POST":
+        db = get_db()
+
+        if "current_group_id" not in session:
+            session["current_group_id"] = 0  # first time starting
+        group_id = session["current_group_id"]
+        typem = request.form.get("typem")
+        if not typem:
+            flash("Please select a type.")
+            return redirect("/register")
+
+        if typem not in ["income", "expense"]:
+            flash("Invalid type selected.")
+            return redirect("/register")
+
+        pm = request.form.get("pm")
+        if not pm:
+            flash("Please select a payment method.")
+            return redirect("/register")
+        
+        amount = request.form.get("price")
+        if not amount:
+            flash("Please enter an amount.")
+            return redirect("/register")
+        try:
+            amount = float(amount)
+        except ValueError:
+            flash("Amount must be a number.")
+            return redirect("/register")
+        if amount < 0:
+            flash("Amount must be a positive number.")
+            return redirect("/register")
+
+        note = request.form.get("note")
+        
+        if typem == "expense":
+            amount = -amount
+
+        currencyM = {
+            "typem": typem,
+            "pm": pm,
+            "amount": amount,
+            "note": note,
+            "pm_id": group_id
+        }
+
+        if "draft_currencyM" not in session:
+            session["draft_currencyM"] = []
+        draft = session["draft_currencyM"]
+        draft.append(currencyM)
+        session["draft_currencyM"] = draft
+        print("Current draft_currencyM:", session.get("draft_currencyM"))
+        session["current_group_id"] += 1
+        session.modified = True
+        return redirect("/register")
+        
+       
+
+
 @app.route("/get_product_by_code")
 def get_product_by_code():
     code = request.args.get("code")
@@ -802,6 +965,39 @@ def delete_movement():
 
     return redirect("/register")
 
+@app.route("/delete_inventoryM", methods=["POST"])
+def delete_inventoryM():
+    index = int(request.form.get("index"))
+
+    if "draft_inventoryM" in session:
+        drafts = session["draft_inventoryM"]
+
+        if 0 <= index < len(drafts):
+            # Get the pm_id before popping
+            pm_id_to_delete = drafts[index]["pm_id"]
+
+            # Remove the movement
+            drafts.pop(index)
+            session["draft_inventoryM"] = drafts
+
+    return redirect("/register")
+
+@app.route("/delete_currencyM", methods=["POST"])
+def delete_currencyM():
+    index = int(request.form.get("index"))
+
+    if "draft_currencyM" in session:
+        drafts = session["draft_currencyM"]
+
+        if 0 <= index < len(drafts):
+            # Get the pm_id before popping
+            pm_id_to_delete = drafts[index]["pm_id"]
+
+            # Remove the movement
+            drafts.pop(index)
+            session["draft_currencyM"] = drafts
+
+    return redirect("/register")
 
 @app.route("/clear_drafts")
 def clear_drafts():

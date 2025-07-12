@@ -6,7 +6,6 @@
 
 {% block h1 %}
     <h1 class="text-center my-4">Register</h1>
-
 {% with messages = get_flashed_messages() %}
   {% if messages %}
     <div class="alert alert-warning" role="alert">
@@ -20,8 +19,18 @@
 {% endblock %}
 
 {% block main %}
+<div class="text-center mb-5">
+        <input type="radio" class="btn-check" name="options-base" value="movements" id="movements" autocomplete="off" checked>
+        <label class="btn" for="movements">Movements</label>
+
+        <input type="radio" class="btn-check" name="options-base" value="currencyM" id="currencyM" autocomplete="off">
+        <label class="btn" for="currencyM">Currencies in/outs</label>
+
+        <input type="radio" class="btn-check" name="options-base" value="inventoryM" id="inventoryM" autocomplete="off">
+        <label class="btn" for="inventoryM">Inventory in/outs</label>
+    </div>
 <div class="container">
-    <form class="row gy-4 gx-auto justify-content-center align-items-center" action="/register" method="POST">
+    <form class="row gy-4 gx-auto justify-content-center align-items-center" name="formRegister" action="/register" method="POST">
         <div class="col-12 col-md-2">
             <select class="form-select" name ="typem" id="type_m">
                 <option value="sale" selected>Sale</option>
@@ -72,8 +81,11 @@
     </form>
 </div>
 {% if session.get("draft_movements") %}
+     <div class="text-left mt-5">
+        <h>Movements Resume</h3>
+    </div>
     <div class="container mt-5" style="text-align: left;">
-        <div class="row fw-bold mb-3">
+        <div class="row fw-bold border-bottom pb-3">
             <div class="col-12 col-md-1"><strong>Type</strong></div>
             <div class="col-12 col-md-2"><strong>Code</strong></div>
             <div class="col-12 col-md-4"><Strong>Name</Strong></div>
@@ -84,7 +96,8 @@
             <div class="col-12 col-md-1"><strong>Action</strong></div>
         </div>
         {% for movement in session["draft_movements"] %}
-            <div class="row -center mb-3">
+           
+            <div class="row -center my-3">
                 <div class="col-12 col-md-1 small">{{ movement["typem"] | capitalize }}</div>
                 <div class="col-12 col-md-2 small">{{ movement["code"] }}</div>
                 <div class="col-12 col-md-4 small">{{ movement["name"] }}</div>
@@ -117,11 +130,70 @@
             <div class="col-1 small">${{ "%.2f"|format(total_payment) }}</div>
         </div>
     </div>
+{% endif %}
+{% if session.get("draft_inventoryM") %}
+    <div class="text-left mt-5">
+        <h4>Inventory in/outs</h4>
+    </div>
+    <div class="container mt-5" style="text-align: left;">
+        <div class="row fw-bold border-bottom pb-3">
+            <div class="col-12 col-md-1"><strong>Type</strong></div>
+            <div class="col-12 col-md-2"><strong>Code</strong></div>
+            <div class="col-12 col-md-2"><Strong>Name</Strong></div>
+            <div class="col-12 col-md-1"><strong>Qty</strong></div>
+            <div class="col-12 col-md-1"><strong>Note</strong></div>
+            <div class="col-12 col-md-1"><strong>Action</strong></div>
+        </div>
+        {% for movement in session["draft_inventoryM"] %}
+            <div class="row -center my-3">
+                <div class="col-12 col-md-1 small">{{ movement["typem"] | capitalize }}</div>
+                <div class="col-12 col-md-2 small">{{ movement["code"] }}</div>
+                <div class="col-12 col-md-2 small">{{ movement["name"] }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["qty"] }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["note"] }}</div>
+                <div class="col-12 col-md-1 small">
+                    <form action="/delete_inventoryM" method="POST">
+                        <input type="hidden" name="index" value="{{ loop.index0 }}">
+                        <button type="submit" class="btn btn-outline-dark btn-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% if session.get("draft_currencyM") %}
+    <div class="text-left mt-5">
+        <h4>Currencies in/outs</h4>
+    </div>
+    <div class="container mt-5" style="text-align: left;">
+        <div class="row fw-bold border-bottom pb-3">
+            <div class="col-12 col-md-1"><strong>Type</strong></div>
+            <div class="col-12 col-md-2"><strong>Name</strong></div>
+            <div class="col-12 col-md-1"><strong>Amount</strong></div>
+            <div class="col-12 col-md-1"><strong>Note</strong></div>
+            <div class="col-12 col-md-1"><strong>Action</strong></div>
+        </div>
+        {% for movement in session["draft_currencyM"] %}
+            <div class="row -center my-3">
+                <div class="col-12 col-md-1 small">{{ movement["typem"] | capitalize }}</div>
+                <div class="col-12 col-md-2 small">{{ movement["pm"] | capitalize }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["amount"] }}</div>
+                <div class="col-12 col-md-1 small">{{ movement["note"] | capitalize }}</div>
+                <div class="col-12 col-md-1 small">
+                    <form action="/delete_currencyM" method="POST">
+                        <input type="hidden" name="index" value="{{ loop.index0 }}">
+                        <button type="submit" class="btn btn-outline-dark btn-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
     <form action="/confirm" method="POST" class="text-center mt-3">
         <button type="submit" class="btn btn-success">Confirm All</button>
     </form>
     
-{% endif %}
+
 
 
   <script>
@@ -130,6 +202,127 @@
         const list = document.getElementById("autocomplete-list");
         const codeField = document.getElementById("codeInput");
         const priceField = document.getElementById("priceInput");
+        const typeSelect = document.getElementById("type_m");
+        const qtyInput = document.getElementById("qtyInput");
+        const noteInput = document.getElementById("noteInput");
+        const statusSelect = document.getElementById("statusSelect");
+        const pmSelect = document.getElementById("pmSelect");
+        const radioButtons = document.querySelectorAll('input[name="options-base"]');
+        const form = document.querySelector('form[name="formRegister"]');
+
+        const typeOptions = {
+            movements: [
+                { value: "sale", label: "Sale" },
+                { value: "purchase", label: "Purchase" },
+                { value: "return", label: "Return" },
+                { value: "output", label: "Output" }
+            ],
+            currencyM: [
+                { value: "income", label: "Income" },
+                { value: "expense", label: "Expense" }
+            ],
+            inventoryM: [
+                { value: "input", label: "Inventory In" },
+                { value: "output", label: "Inventory Out" }
+            ]
+        };
+
+        function updateTypeOptions(typeKey) {
+            const select = document.getElementById("type_m");
+            select.innerHTML = ""; // clear current options
+
+            typeOptions[typeKey].forEach(opt => {
+                const option = document.createElement("option");
+                option.value = opt.value;
+                option.textContent = opt.label;
+                select.appendChild(option);
+            });
+        }
+
+        radioButtons.forEach(radio => {
+            radio.addEventListener("change", () => {
+                const selectedValue = radio.value;
+                updateTypeOptions(selectedValue);
+
+                if (selectedValue === "movements") {
+                    form.action = "/register";
+                    form.method = "POST";
+                    // enable all fields
+                    codeField.disabled = false;
+                    priceField.disabled = false;
+                    input.disabled = false;
+                    qtyInput.disabled = false;
+                    noteInput.disabled = false;
+                    statusSelect.disabled = false;
+                    pmSelect.disabled = false;
+                    typeSelect.disabled = false;
+
+                    priceField.placeholder = "Price";
+                    noteInput.placeholder = "Note";
+
+                    // reset values
+                    codeField.value = "";
+                    input.value = "";
+                    priceField.value = "";
+                    qtyInput.value = "1";
+                    noteInput.value = "";
+                    statusSelect.value = "delivered";
+                    pmSelect.value = "Payment method";
+            
+
+                } else if (selectedValue === "currencyM") {
+                    
+                    form.action = "/register_currencyM";
+                    form.method = "POST";
+                    // disable fields not needed for currency movements
+                    codeField.disabled = true;
+                    priceField.disabled = false;
+                    input.disabled = true;
+                    qtyInput.disabled = true;
+                    noteInput.disabled = false;
+                    statusSelect.disabled = true;
+                    pmSelect.disabled = false;
+                    typeSelect.disabled = false;
+
+                    priceField.placeholder = "Amount";
+                    noteInput.placeholder = "Note (currency)";
+
+                    // reset values
+                    codeField.value = "";
+                    input.value = "";
+                    priceField.value = "";
+                    qtyInput.value = "1";
+                    noteInput.value = "";
+                    statusSelect.value = "delivered";
+                    pmSelect.value = "Payment method";
+
+                } else if (selectedValue === "inventoryM") {
+                    form.action = "/register_inventoryM";
+                    form.method = "POST";
+                    // disable fields not needed for inventory movements
+                    codeField.disabled = false;
+                    priceField.disabled = true;
+                    input.disabled = false;
+                    qtyInput.disabled = false;
+                    noteInput.disabled = false;
+                    statusSelect.disabled = false;
+                    pmSelect.disabled = true;
+                    typeSelect.disabled = false;
+
+                    priceField.placeholder = "Price";
+                    noteInput.placeholder = "Note (inventory)";
+
+                    //reset values
+                    codeField.value = "";
+                    input.value = "";
+                    priceField.value = "";
+                    qtyInput.value = "1";
+                    noteInput.value = "";
+                    statusSelect.value = "delivered";
+                    pmSelect.value = "Payment method";
+                }
+            });
+        });
 
         
         codeInput.addEventListener("input", () => {
@@ -194,7 +387,7 @@
                 list.innerHTML = "";
             }
         });
-        const pmSelect = document.getElementById("pmSelect");
+       
         const multiForm = document.getElementById("multi-payment-form");
         const paymentsList = document.getElementById("multi-payments-list");
         const addPaymentBtn = document.getElementById("add-payment-btn");
