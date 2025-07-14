@@ -1008,7 +1008,8 @@ def clear_drafts():
 
 @app.route("/confirm", methods=["POST"])
 def confirm():
-    if "draft_movements" not in session or not session["draft_movements"]:
+    if ("draft_movements" not in session or not session["draft_movements"]) and ("draft_currencyM" not in session or not session["draft_currencyM"] and ("draft_inventory" not in session or not session["draft_inventoryM"])
+    ):
         flash("No movements to confirm.")
         return redirect("/register")
 
@@ -1023,21 +1024,25 @@ def confirm():
         document_id = last_doc + 1
 
     for movement in drafts:
+        operation = -1
+        if movement["typem"] in ["purchase", "return"]:
+            operation = 1
+
         qty = db.execute("SELECT Quantity FROM inventory WHERE id = ?", (movement["code"],)).fetchone()
-        if qty is None or qty[0] < movement["qty"]:
+        if (qty + (operation * movement["qty"])) < 1:
             flash(f"Not enough stock for product {movement['name']} (Code: {movement['code']}).")
             return redirect("/register")
+
+        note = ("POS ?", document_id)
         db.execute(
-            "INSERT INTO inventory_movements (type, name, product_id, units, price, toal, note, status, draft_id, date, document_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO inventory_movements (type, name, product_id, units, price, toal, note, status, draft_id, date, document_id, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (movement["typem"], movement["name"], movement["code"],
             movement["qty"], movement["price"], movement["total"],
             movement["note"], movement["status"],
             movement["pm_id"], datetime.now(),
-            document_id)
+            document_id, note)
         )
-        operation = -1
-        if movement["typem"] in ["purchase", "return"]:
-            operation = 1
+        
         db.execute(
             "UPDATE inventory SET Quantity = Quantity + ? WHERE id = ?",
             (operation * movement["qty"], movement["code"])
@@ -1076,6 +1081,34 @@ def confirm():
             "UPDATE currencies SET balance = balance + ? WHERE name = ?",
             (operation * payment["amount"], payment["method"])
         )
+
+    if session["draft_currencyM"]:
+        draft_currencyM = session["draft_currencyM"]
+
+        for movement in draft_currencyM:
+            currencyM_id = db.execute("SELECT id FROM currency WHERE name = ?")
+            
+            operation = 1
+            if movement["typem"] in ["expense"]:
+                operation = -1
+
+            amount = movememt["amount"]
+
+            balance = db.execute("SELECT balance FROM currency WHERE name = ?", (movement["name"],)).fetchone()
+            if (balance + amount) < 1:
+                flash(f"Not enough amount for {movement["name"]}")
+                return redirect("/register")
+
+            db.execute(
+                "INSERT into currencies_movements (name, amount, draft_id, date, document_id, payment_method_id, note) VALUES (?, ?, ?, ?, ?)",
+                (movement["pm"], amount, movement["pm_id"], datetime.mow(), document_id, currencyM_id, movement["note"])
+            )
+
+            db.execute("UPDATE currency SET balance = balance + ? WHERE id = ?",
+                (operation * )
+            )
+
+
 
     db.commit()
     session.pop("draft_movements", None)
