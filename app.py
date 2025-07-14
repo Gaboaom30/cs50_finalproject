@@ -1105,7 +1105,7 @@ def confirm():
             )
 
             db.execute("UPDATE currency SET balance = balance + ? WHERE id = ?",
-                (operation * )
+                (amount, currencyM)
             )
 
 
