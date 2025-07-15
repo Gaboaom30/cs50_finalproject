@@ -2,15 +2,16 @@ import os
 import datetime
 import sqlite3
 
-from flask import Flask, flash, redirect, render_template, request, session, g, jsonify
+from flask import Flask, flash, redirect, render_template, request, session, g, jsonify, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timedelta
 from collections import defaultdict
+from functools import wraps
 
 # Configure application
 app = Flask(__name__)
-
+app.secret_key = "your_secret_key"
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
@@ -36,11 +37,34 @@ def close_db(error):
     if db is not None:
         db.close()
 
+@app.before_request
+def require_login():
+    exempt_routes = ["login", "static"]  # allow access to login and static files
+    if "user_id" not in session and request.endpoint not in exempt_routes:
+        return redirect(url_for("login"))
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        if user and check_password_hash(user[2], password):
+            session["user_id"] = user[0]
+            session["username"] = user[1]
+            return redirect("/")
+        flash("Invalid username or password.")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     db = get_db()
-
     # Fetch credit sales and available payment methods
     rows = db.execute("""
         SELECT 
@@ -600,8 +624,6 @@ def index_payment():
             flash("Missing or invalid payment data.")
             return redirect("/")
 
-
-        
 @app.route("/register", methods=["GET", "POST"])
 def register():
     
@@ -930,9 +952,6 @@ def register_currencyM():
         session.modified = True
         return redirect("/register")
         
-       
-
-
 @app.route("/get_product_by_code")
 def get_product_by_code():
     code = request.args.get("code")
@@ -943,7 +962,6 @@ def get_product_by_code():
     if product:
         return jsonify(dict(product))
     return jsonify({})
-
 
 @app.route("/delete_movement", methods=["POST"])
 def delete_movement():
@@ -1104,7 +1122,7 @@ def confirm():
 
         balance = db.execute("SELECT balance FROM currencies WHERE name = ?", (movement["pm"],)).fetchone()
         if (balance[0] + amount) < 1:
-            flash(f"Not enough amount for {movement["name"]}")
+            flash(f"Not enough amount for {movement["pm"]}")
             return redirect("/register")
 
         db.execute(
@@ -1117,23 +1135,28 @@ def confirm():
         )
         
     for movement in draft_inventoryM:
-        qty = db.execute("SELECT Quantity FROM inventory WHERE Id = ?", movement["code"])
+        qty = db.execute("SELECT Quantity FROM inventory WHERE Id = ?", (movement["code"],)).fetchone()
         amount = movement["qty"]
             
-        if (qty + amount) < 1:
+        if (qty[0] + amount) < 1:
             flash(f"Product {movement["name"]} is out of stock")
             return redirect("/register")
             
-        db.execute("INSERT INTO inventory_movements (product_id, type, units, date, note, document_id, draft_id, name, price, toal, status)",(
-            movement["code"], movement["typem"], movemnt["qty"],
+        db.execute("""
+            INSERT INTO inventory_movements 
+            (product_id, type, units, date, note, document_id, draft_id, name, price, toal, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            movement["code"], movement["typem"], movement["qty"],
             datetime.now(), movement["note"], document_id,
-            movement["pm_id"], movement["name"], movement["total"], movement["status"] 
+            movement["pm_id"], movement["name"], movement["price"], movement["total"], movement["status"]
         ))
-
-        
+                
     db.commit()
     session.pop("draft_movements", None)
     session.pop("pm_movements", None)
+    session.pop("draft_currencyM", None)
+    session.pop("draft_inventoryM", None)
     session.pop("current_group_id", None)
     flash("Movements confirmed!")
     

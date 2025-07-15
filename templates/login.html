@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block title %}
+    Login
+{% endblock %}
+{% block h1 %}
+    <h1 class="text-center my-4">Login</h1>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="alert alert-warning" role="alert">
+                {% for message in messages %}
+                    <div>{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+{% endblock %}
+{% block navbar %}
+{% endblock %}
+{% block main %}
+<form action="/login" method="post" class="mx-auto" style="max-width: 400px;">
+    <div class="mb-3">
+        <label for="username" class="form-label">Username</label>
+        <input
+            type="text"
+            class="form-control"
+            id="username"
+            name="username"
+            required
+            autofocus
+        >
+    </div>
+    <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            required
+        >
+    </div>
+    <button type="submit" class="btn btn-primary w-100">Login</button>
+</form>
+{% endblock %}
