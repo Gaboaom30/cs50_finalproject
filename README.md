@@ -1,7 +1,7 @@
 # Ludari
 
 ## Video Demo
-[Watch the demo](<URL HERE>)
+[Watch the demo](<https://youtu.be/YIH6dS_uQ0c>)
 
 ## Description
 
