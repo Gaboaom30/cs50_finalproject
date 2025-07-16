@@ -672,6 +672,7 @@ def register():
             flash("Quantity must be a positive number.")
             return redirect("/register")
         
+        
         price = request.form.get("price")
         if not price:
             flash("Please enter a price.")
@@ -1057,9 +1058,9 @@ def confirm():
     document_id = (last_doc[0] or 0) + 1
 
     for movement in drafts:
-        operation = -1
-        if movement["typem"] in ["purchase", "return"]:
-            operation = 1
+        operation = 1
+        if movement["typem"] in ["sale", "output"]:
+            operation = -1
 
         qty = db.execute("SELECT Quantity FROM inventory WHERE id = ?", (movement["code"],)).fetchone()
         if (qty[0] + (operation * movement["qty"])) < 0:
@@ -1069,7 +1070,7 @@ def confirm():
         db.execute(
             "INSERT INTO inventory_movements (type, name, product_id, units, price, toal, note, status, draft_id, date, document_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (movement["typem"], movement["name"], movement["code"],
-            movement["qty"], movement["price"], movement["total"],
+            operation * movement["qty"], movement["price"], movement["total"],
             movement["note"], movement["status"],
             movement["pm_id"], datetime.now(),
             document_id)

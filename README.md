@@ -1,33 +1,98 @@
-# YOUR PROJECT TITLE
-#### Video Demo:  <URL HERE>
-#### Description:
-Welcome to my CS50 final proyect, in this oportunity i implemented an iventory management page, that tracks inventory and currencies movements.
-To do so the database uses mainly four tables: inventory, currencies, inventory_movements and currencies movement. Each table has its own html template where you can search, filter, sort and toggle the data, giving countless options to see information as needed.
+# Ludari
 
-#### Iventory:
-In the inventory template we get to see all the products available and its information as code, name, category, stock, and price. This is the core of the project and the launch point for everything else to happen.
-In this template we also have to possibility of add, edit and delete products, by this buttons we are able to modify our inventory database.
+## Video Demo
+[Watch the demo](<URL HERE>)
 
-When adding a product all fields have to be filled except for quantity wich is automatically set to 0.
+## Description
 
-Every product has the its right edit and delete buttons, in edit you get to change all the fields except for id and quantity, as id is the main way to identify products, and quantity only can be modifyed by recording a movement.
+Welcome to my **CS50 final project**!  
+For this opportunity, I created an **inventory management web app** that tracks both inventory and currency movements.
 
-Deleting a product only will be possible if its quantity is 0.
+The database uses four main tables:
+- `inventory`
+- `currencies`
+- `inventory_movements`
+- `currencies_movements`
 
-#### Currencies:
-Similar to inventory, in our currency table are listed all the currencies available to use, also with the posibility to add and delete them.
+Each table has its own HTML template where you can **search**, **filter**, **sort**, and **toggle** the data—giving you countless ways to see the information you need.
 
-When adding a currency its balance is automatically set too 0 and is given an id number.
+---
 
-Same as inventory, if you desire to delete a currency you have to make sure first that its blance is 0.
+## Inventory
 
-#### Register:
-This Where are going to record all the movements related to the database, in order to do so, inventory and currencies have their own movements's tables where they are recorded.
+The **inventory** template lets you see all products and their details: code, name, category, stock, and price.  
+This is the core of the project and the launch point for everything else.
 
-When we get to register notice that they are three options  to choose: Movements, currencies in/outs, inventory in/outs. This is only to identify wich tables are related to the transaction, if it's set to movements it means that the transaction required to record a movement on both tables (for example: sales, return, pucharses, etc. These are operations that require to record movements in our inventory and our currencies and update thier values), the other two options are for when movements only imply one movement_table.
+**Features:**
+- **Add, edit, or delete products**
+  - When adding a product, all fields must be filled out except for quantity (which is set to `0` by default).
+  - Each product has **Edit** and **Delete** buttons.
+  - In **Edit**, you can change all fields except `id` (the unique identifier) and `quantity` (which can only be modified by recording a movement).
+  - **Deleting** a product is only possible if its quantity is `0`.
 
-Once we select the nature of our movement we have to fill the form, depending of wich one you choose its only going to require the inputs that are related to it or all if both inventory and currency are include in the movement.
+---
 
+## Currencies
 
+The **currencies** table is similar to inventory. Here, you can view, add, and delete all available currencies.
 
+**Features:**
+- When adding a currency, its balance is automatically set to `0` and it’s assigned an ID.
+- You can only delete a currency if its balance is `0`.
 
+---
+
+## Register
+
+This is where you record all movements in the database.  
+Inventory and currencies each have their own movement tables.
+
+When you go to **Register**, you can choose from:
+1. **Movements** (affecting both inventory and currencies, e.g., sales, returns, purchases)
+2. **Currencies in/out**
+3. **Inventory in/out**
+
+**How it works:**
+- Your choice determines which tables are involved in the transaction.
+- If you select **Movements**, it means the transaction involves both tables. The other options are for transactions involving only one table.
+
+**Process:**
+1. Fill out the form (the required fields change depending on your selection). Select type(if inventory: sale, pucharse, return, output, input. If currency: income, expense), Code, name, quantity, price, note and status.
+2. Click **Add** to save the movement as a draft.
+3. Repeat as needed for additional movements.
+4. When you’re done, click **Confirm**, and the program will check all the information and then save it:
+   - All draft movements are saved to the database.
+   - Inventory stock and currency balances are updated.
+   - Each movement is assigned a shared `document_id` and `draft_id` to group related movements (e.g., an inventory movement and a currency movement for the same sale). Thanks to it was possible to implement a multipayment method option that lets you attach differents payments to a inventory movement
+
+---
+
+## Inventory Movements
+
+This page shows a list of all inventory movements that have been recorded.
+
+---
+
+## Currency Movements
+
+This section shows all currency movements. It’s integrated into the currencies template.
+
+---
+
+## Index
+
+The **Index** page includes two tables by default (but you can add more if you want):
+
+- **Credit Sales Table:**  
+  When you register a sale with payment set to "credit," it appears here. You can update payments directly from this table. Each payment adds two currency movements with the same `draft_id` and `document_id`:  
+    - One for the payment received  
+    - One for the negative credit movement  
+  This lets you track how much of each sale has been paid until the debt is settled.
+
+- **Delivery Table:**  
+  This table shows all movements where the status is "to deliver," so you can track pending deliveries for customers.
+
+---
+
+## Responsive layout
+The page is fully responsive, allowing you to work in any screen size
