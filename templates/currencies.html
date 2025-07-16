@@ -28,7 +28,7 @@
                     
             {% for currency in currencies %}
                 <div class="row" style="text-align: left;">
-                    <div class="col small">{{ currency.Id }}</div>
+                    <div class="col small">{{ currency.id }}</div>
                     <div class="col small">{{ currency.name | capitalize }}</div>
                     <div class="col small">{{ currency.balance }}</div>
                 </div>
@@ -69,13 +69,25 @@
                     <input type="number" id="document-id-filter" class="form-control" placeholder="Document Id">
                 </div>
                 <div class="col-12 col-md-2">
+                    <select id="type-filter" class="form-select">
+                        <option value="">Type</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
                     <input type="number" id="draft-id-filter" class="form-control" placeholder="Draft Id">
                 </div>
                 <div class="col-12 col-md-2">
                     <input type="number" id="code-filter" class="form-control" placeholder="Code">
                 </div>
                 <div class="col-12 col-md-2">
-                    <input type="text" id="currency-filter" class="form-control" placeholder="Currency">
+                    <select id="currency-filter"  class="form-select">
+                        <option value="">Currency</option>
+                        {% for currency in currencies %}
+                        <option value="{{currency['name']}}"> {{ currency['name']}}</option>
+                        {%endfor%}
+                    </select>
                 </div>
                  <div class="col-12 col-md-2 pb-1">
                     <select id="date-filter" class="form-select">
@@ -97,6 +109,9 @@
             <div class="mb-3">
                 <input type="checkbox" class="toggle-col btn-check" id="btn-check-1" data-target="col-date" autocomplete="off" checked>
                 <label class="btn btn-sm" for="btn-check-1">Date</label>
+
+                <input type="checkbox" class="toggle-col btn-check" id="btn-check-7" data-target="col-type" autocomplete="off" checked>
+                <label class="btn btn-sm" for="btn-check-7">Type</label>
 
                 <input type="checkbox" class="toggle-col btn-check" id="btn-check-2" data-target="col-docId" autocomplete="off" checked>
                 <label class="btn btn-sm" for="btn-check-2">Document Id</label>
@@ -120,12 +135,13 @@
                     <div class="mt-4 ">
                         <div class="row fw-bold" style="text-align: left;">
                             <div class="col-2 sort-header col-date" data-sort="date">Date</div>
-                            <div class="col-2 sort-header col-docId" data-sort="document_id">Document Id</div>
-                            <div class="col-1 sort-header col-draftId" data-sort="draft_id">Draft Id</div>
+                            <div class="col-1 sort header col-type" data-sort="type">Type</div>
+                            <div class="col-2 sort-header col-docId" data-sort="document_id">Doc Id</div>
+                            <div class="col-2 sort-header col-draftId" data-sort="draft_id">Draft Id</div>
                             <div class="col-1 sort-header col-code" data-sort="payment_method_id">Code</div>
-                            <div class="col-2 sort-header col-currency" data-sort="name">Currency</div>
-                            <div class="col-2 col-note" data-sort="note">Note</div>
-                            <div class="col-1 sort-header col-amount" data-sort="amount">Amount</div>
+                            <div class="col-1 col-currency" data-sort="name">Currency</div>
+                            <div class="col-1 col-note" data-sort="note">Note</div>
+                            <div class="col-2 sort-header col-amount" data-sort="amount">Amount</div>
                         </div>          
                     </div>
                     <div id="inventory-data" style="text-align: left;"> </div>
@@ -160,6 +176,7 @@
         const dateFilter = document.getElementById("date-filter");
         const startDateInput = document.getElementById("start-date");
         const endDateInput = document.getElementById("end-date");
+        const typeFilter = document.getElementById("type-filter");
         let currentPage = 1;
 
         const addCurrency = document.getElementById("add-currency");
@@ -220,12 +237,13 @@
                     html += `
                         <div class="row resizable-row py-2 border-bottom">
                             <div class="col-2 small col-date">${formatDate(item.date)}</div>
+                            <div class="col-1 small col-type">${capitalize(item.type)}</div>
                             <div class="col-2 small col-docId">${item.document_id}</div>
-                            <div class="col-1 small col-draftId">${item.draft_id}</div>
+                            <div class="col-2 small col-draftId">${item.draft_id}</div>
                             <div class="col-1 small col-code">${item.payment_method_id}</div>
-                            <div class="col-2 small col-currency">${capitalize(item.name)}</div>
-                            <div class="col-2 small col-note">${capitalize(item.note)}</div>
-                            <div class="col-1 small col-amount">${(item.amount).toFixed(1)}</div>
+                            <div class="col-1 small col-currency">${capitalize(item.name)}</div>
+                            <div class="col-1 small col-note">${capitalize(item.note)}</div>
+                            <div class="col-2 small col-amount">${(item.amount).toFixed(1)}</div>
                             <div class="resize-handle"></div>
                         </div>
                     `;
@@ -274,7 +292,7 @@
                     btn.className = `btn ${currentPageParam + i === currentPage ? "btn-primary" : "btn-outline-primary"}`;
                     btn.addEventListener("click", () => {
                         currentPage = currentPageParam + i;
-                        runSearch();
+                        runsearch();
                     });
                     container.appendChild(btn);
                 }
@@ -286,7 +304,7 @@
                 last.className = `btn ${currentPageParam === totalPages ? "btn-primary" : "btn-outline-primary"}`;
                 last.addEventListener("click", () => {
                     currentPage = totalPages;
-                    runSearch();
+                    runsearch();
                 });
                 container.appendChild(last);
             }
@@ -313,6 +331,7 @@
             const date = dateFilter.value;
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
+            const type = typeFilter.value;
 
             const params = new URLSearchParams({
                 document_id: documentId,
@@ -325,6 +344,7 @@
                 page: currentPage,
                 sort_by: currentSortField,
                 sort_dir: currentSortDirection,
+                type: type,
             });
 
             fetch(`/currencies_movements?${params}`)
@@ -353,6 +373,7 @@
             documentIdFilter.addEventListener("input", runsearch);
             draftIdFilter.addEventListener("input", runsearch);
             codeFilter.addEventListener("input", runsearch);
+            typeFilter.addEventListener("input", runsearch);
             currencyFilter.addEventListener("input", runsearch);
             dateFilter.addEventListener("change", () => {
                 if (dateFilter.value === "custom") {

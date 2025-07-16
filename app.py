@@ -2,15 +2,16 @@ import os
 import datetime
 import sqlite3
 
-from flask import Flask, flash, redirect, render_template, request, session, g, jsonify
+from flask import Flask, flash, redirect, render_template, request, session, g, jsonify, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime, timedelta
 from collections import defaultdict
+from functools import wraps
 
 # Configure application
 app = Flask(__name__)
-
+app.secret_key = "your_secret_key"
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
@@ -36,11 +37,34 @@ def close_db(error):
     if db is not None:
         db.close()
 
+@app.before_request
+def require_login():
+    exempt_routes = ["login", "static"]  # allow access to login and static files
+    if "user_id" not in session and request.endpoint not in exempt_routes:
+        return redirect(url_for("login"))
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        db = get_db()
+        user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+        if user and check_password_hash(user[2], password):
+            session["user_id"] = user[0]
+            session["username"] = user[1]
+            return redirect("/")
+        flash("Invalid username or password.")
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     db = get_db()
-
     # Fetch credit sales and available payment methods
     rows = db.execute("""
         SELECT 
@@ -68,9 +92,12 @@ def index():
         credit_by_doc[key]["items"].append(row)
 
     cd = []
-    for data in credit_by_doc.values():
-        if data["total"] > 0:
-            cd.extend(data["items"])
+    for key, data in credit_by_doc.items():
+        if data["total"] > 0 and data["items"]:
+        # Usa la info del primer movimiento, pero con la suma como 'amount'
+            first = dict(data["items"][0])
+            first["amount"] = data["total"]
+            cd.append(first)
 
     pm = db.execute("SELECT * FROM currencies").fetchall()
 
@@ -253,6 +280,7 @@ def currencies_movements():
     date_filter = request.args.get("date", "").strip()
     start = request.args.get("start_date", "").strip()
     end = request.args.get("end_date", "").strip()
+    typem = request.args.get("type", "").strip()
 
     sort_by = request.args.get("sort_by", "date")
     sort_dir = request.args.get("sort_dir", "asc")
@@ -265,6 +293,11 @@ def currencies_movements():
         base_query += " AND document_id = ?"
         total_query += " AND document_id = ?"
         params.append(document_id)
+
+    if typem:
+        base_query += " AND type = ?"
+        total_query += " AND type = ?"
+        params.append(typem)
     
     if draft_id:
         base_query += " AND draft_id = ?"
@@ -563,15 +596,15 @@ def index_payment():
                     flash("Payment method not found.")
                     return redirect("/")
 
-                db.execute("INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, -?, ?, ?, ?, ?)",
+                db.execute("INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id, type) VALUES (?, -?, ?, ?, ?, ?, ?)",
                     ("credit", payment["amount"],
-                    draft_id, datetime.now(), movement_id, payment_method_id)
+                    draft_id, datetime.now(), movement_id, payment_method_id, "expense")
                 )
 
                 db.execute(
-                    "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (payment["method"], payment["amount"],
-                    draft_id, datetime.now(), movement_id, payment_method_id)
+                    draft_id, datetime.now(), movement_id, payment_method_id, "income")
                 )
 
                 # Update the balance
@@ -591,8 +624,6 @@ def index_payment():
             flash("Missing or invalid payment data.")
             return redirect("/")
 
-
-        
 @app.route("/register", methods=["GET", "POST"])
 def register():
     
@@ -640,6 +671,7 @@ def register():
         if qty < 0:
             flash("Quantity must be a positive number.")
             return redirect("/register")
+        
         
         price = request.form.get("price")
         if not price:
@@ -855,10 +887,10 @@ def register_inventoryM():
 
         if "draft_inventoryM" not in session:
             session["draft_inventoryM"] = []
+
         draft = session["draft_inventoryM"]
         draft.append(inventoryM)
         session["draft_inventoryM"] = draft
-        print("Current draft_inventoryM:", session.get("draft_inventoryM"))
         session["current_group_id"] += 1
         session.modified = True
 
@@ -917,14 +949,10 @@ def register_currencyM():
         draft = session["draft_currencyM"]
         draft.append(currencyM)
         session["draft_currencyM"] = draft
-        print("Current draft_currencyM:", session.get("draft_currencyM"))
         session["current_group_id"] += 1
         session.modified = True
         return redirect("/register")
         
-       
-
-
 @app.route("/get_product_by_code")
 def get_product_by_code():
     code = request.args.get("code")
@@ -935,7 +963,6 @@ def get_product_by_code():
     if product:
         return jsonify(dict(product))
     return jsonify({})
-
 
 @app.route("/delete_movement", methods=["POST"])
 def delete_movement():
@@ -980,6 +1007,10 @@ def delete_inventoryM():
             drafts.pop(index)
             session["draft_inventoryM"] = drafts
 
+            flash("Movement and related payments deleted.")
+        else:
+            flash("Invalid movement index.")
+
     return redirect("/register")
 
 @app.route("/delete_currencyM", methods=["POST"])
@@ -996,6 +1027,10 @@ def delete_currencyM():
             # Remove the movement
             drafts.pop(index)
             session["draft_currencyM"] = drafts
+        
+            flash("Movement and related payments deleted.")    
+        else:
+            flash("Invalid movement index.")
 
     return redirect("/register")
 
@@ -1008,62 +1043,53 @@ def clear_drafts():
 
 @app.route("/confirm", methods=["POST"])
 def confirm():
-    if ("draft_movements" not in session or not session["draft_movements"]) and ("draft_currencyM" not in session or not session["draft_currencyM"] and ("draft_inventory" not in session or not session["draft_inventoryM"])
-    ):
+
+    drafts = session.get("draft_movements", [])
+    pm_movements = session.get("pm_movements", [])
+    draft_currencyM = session.get("draft_currencyM", [])
+    draft_inventoryM = session.get("draft_inventoryM", [])
+
+    if not drafts and not draft_currencyM and not draft_inventoryM:
         flash("No movements to confirm.")
         return redirect("/register")
 
     db = get_db()
-    drafts = session["draft_movements"]
-    pm_movements = session.get("pm_movements", [])
-
-    last_doc = db.execute("SELECT MAX(document_id) FROM inventory_movements").fetchone()[0]
-    if last_doc is None:
-        document_id = 1
-    else:
-        document_id = last_doc + 1
+    last_doc = db.execute("SELECT MAX(document_id) FROM inventory_movements").fetchone()
+    document_id = (last_doc[0] or 0) + 1
 
     for movement in drafts:
-        operation = -1
-        if movement["typem"] in ["purchase", "return"]:
-            operation = 1
+        operation = 1
+        if movement["typem"] in ["sale", "output"]:
+            operation = -1
 
         qty = db.execute("SELECT Quantity FROM inventory WHERE id = ?", (movement["code"],)).fetchone()
-        if (qty + (operation * movement["qty"])) < 1:
+        if (qty[0] + (operation * movement["qty"])) < 0:
             flash(f"Not enough stock for product {movement['name']} (Code: {movement['code']}).")
             return redirect("/register")
 
-        note = ("POS ?", document_id)
         db.execute(
-            "INSERT INTO inventory_movements (type, name, product_id, units, price, toal, note, status, draft_id, date, document_id, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO inventory_movements (type, name, product_id, units, price, toal, note, status, draft_id, date, document_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (movement["typem"], movement["name"], movement["code"],
-            movement["qty"], movement["price"], movement["total"],
+            operation * movement["qty"], movement["price"], movement["total"],
             movement["note"], movement["status"],
             movement["pm_id"], datetime.now(),
-            document_id, note)
+            document_id)
         )
-        
+            
         db.execute(
             "UPDATE inventory SET Quantity = Quantity + ? WHERE id = ?",
             (operation * movement["qty"], movement["code"])
         )
-            
+                
     for payment in pm_movements:
         payment_method_id = db.execute("SELECT id FROM currencies WHERE name = ?", (payment["method"],)).fetchone()
-        
+            
         if payment_method_id:
             payment_method_id = payment_method_id[0]
         else:
             flash("Payment method not found.")
             return redirect("/register")
-       
-        db.execute(
-            "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id) VALUES (?, ?, ?, ?, ?, ?)",
-            (payment["method"], payment["amount"],
-            payment["pm_id"], datetime.now(), document_id, payment_method_id)
-        )
-            
-            
+                
         # Find the matching movement by pm_id
         related_movement = next((m for m in drafts if m["pm_id"] == payment["pm_id"]), None)
 
@@ -1075,44 +1101,63 @@ def confirm():
 
         # Apply the correct logic based on movement type
         operation = 1
+        typem = "income"
         if movement_type in ["pucharse", "return"]:
             operation = -1
+            typem = "expense"
         db.execute(
             "UPDATE currencies SET balance = balance + ? WHERE name = ?",
             (operation * payment["amount"], payment["method"])
         )
 
-    if session["draft_currencyM"]:
-        draft_currencyM = session["draft_currencyM"]
-
-        for movement in draft_currencyM:
-            currencyM_id = db.execute("SELECT id FROM currency WHERE name = ?")
+        db.execute(
+            "INSERT INTO currencies_movements (name, amount, draft_id, date, document_id, payment_method_id, type) VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (payment["method"], payment["amount"],
+            payment["pm_id"], datetime.now(), document_id, payment_method_id, typem)
+        )
             
-            operation = 1
-            if movement["typem"] in ["expense"]:
-                operation = -1
 
-            amount = movememt["amount"]
+    for movement in draft_currencyM:
+        currencyM_id = db.execute("SELECT id FROM currencies WHERE name = ?", (movement["pm"],)).fetchone()
+        amount = movement["amount"]
 
-            balance = db.execute("SELECT balance FROM currency WHERE name = ?", (movement["name"],)).fetchone()
-            if (balance + amount) < 1:
-                flash(f"Not enough amount for {movement["name"]}")
-                return redirect("/register")
+        balance = db.execute("SELECT balance FROM currencies WHERE name = ?", (movement["pm"],)).fetchone()
+        if (balance[0] + amount) < 1:
+            flash(f"Not enough amount for {movement["pm"]}")
+            return redirect("/register")
 
-            db.execute(
-                "INSERT into currencies_movements (name, amount, draft_id, date, document_id, payment_method_id, note) VALUES (?, ?, ?, ?, ?)",
-                (movement["pm"], amount, movement["pm_id"], datetime.mow(), document_id, currencyM_id, movement["note"])
-            )
+        db.execute(
+            "INSERT into currencies_movements (name, amount, draft_id, date, document_id, payment_method_id, note, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (movement["pm"], amount, movement["pm_id"], datetime.now(), document_id, currencyM_id[0], movement["note"], movement["typem"])
+        )
 
-            db.execute("UPDATE currency SET balance = balance + ? WHERE id = ?",
-                (amount, currencyM)
-            )
-
-
-
+        db.execute("UPDATE currencies SET balance = balance + ? WHERE id = ?",
+            (amount, currencyM_id[0])
+        )
+        
+    for movement in draft_inventoryM:
+        qty = db.execute("SELECT Quantity FROM inventory WHERE Id = ?", (movement["code"],)).fetchone()
+        amount = movement["qty"]
+            
+        if (qty[0] + amount) < 1:
+            flash(f"Product {movement["name"]} is out of stock")
+            return redirect("/register")
+            
+        db.execute("""
+            INSERT INTO inventory_movements 
+            (product_id, type, units, date, note, document_id, draft_id, name, price, toal, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            movement["code"], movement["typem"], movement["qty"],
+            datetime.now(), movement["note"], document_id,
+            movement["pm_id"], movement["name"], movement["price"], movement["total"], movement["status"]
+        ))
+                
     db.commit()
     session.pop("draft_movements", None)
     session.pop("pm_movements", None)
+    session.pop("draft_currencyM", None)
+    session.pop("draft_inventoryM", None)
     session.pop("current_group_id", None)
     flash("Movements confirmed!")
     

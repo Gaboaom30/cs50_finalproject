@@ -50,7 +50,7 @@
             <input type="number" name="qty" class="form-control" value ="1" id="qtyInput" placeholder="Qty">
         </div>
         <div class="col-12 col-md-2">
-            <input type="number" name="price" id="priceInput" class="form-control" placeholder="Price">
+            <input type="number" name="price" step="0.01" id="priceInput" class="form-control" placeholder="Price">
         </div>
         <div class="col-12 col-md-2">
             <textarea type="text" name="note" id="noteInput" class="form-control" rows="1" placeholder="Note"></textarea>
@@ -189,7 +189,7 @@
         {% endfor %}
     </div>
 {% endif %}
-    <form action="/confirm" method="POST" class="text-center mt-3">
+    <form action="/confirm" method="POST" class="text-center mt-5">
         <button type="submit" class="btn btn-success">Confirm All</button>
     </form>
     
