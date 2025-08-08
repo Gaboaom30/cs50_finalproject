@@ -63,7 +63,7 @@ When you go to **Register**, you can choose from:
 4. When you’re done, click **Confirm**, and the program will check all the information and then save it:
    - All draft movements are saved to the database.
    - Inventory stock and currency balances are updated.
-   - Each movement is assigned a shared `document_id` and `draft_id` to group related movements (e.g., an inventory movement and a currency movement for the same sale). Thanks to it was possible to implement a multipayment method option that lets you attach differents payments to a inventory movement
+   - Each movement is assigned a shared `document_id` and `draft_id` to group related movements (e.g., an inventory movement and a currency movement for the same sale). Thanks to it was possible to implement a multipayment method option that lets you attach differents payments to a inventory movement. This was one os the hardest parts to figure out as i specifycally wanted to have multipayment methods.
 
 ---
 
