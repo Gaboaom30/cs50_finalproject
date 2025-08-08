@@ -1,5 +1,6 @@
 import os
 import datetime
+from flask_sqlalchemy import SQLAlchemy
 import sqlite3
 
 from flask import Flask, flash, redirect, render_template, request, session, g, jsonify, url_for
@@ -27,9 +28,11 @@ def after_request(response):
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect("databases.db")
+        db_path = os.path.join(os.path.dirname(__file__), "databases.db")
+        g.db = sqlite3.connect(db_path)
         g.db.row_factory = sqlite3.Row
     return g.db
+
 
 @app.teardown_appcontext
 def close_db(error):
