@@ -12,12 +12,40 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
-# === rutas del disco persistente (leyéndolas de ENV si existen) ===
-DB_PATH = os.environ.get("DB_PATH", "/var/data/databases.db")
-SESSION_DIR = os.environ.get("SESSION_FILE_DIR", "/var/data/flask-session")
+# --- Rutas persistentes con fallback automático ---
+from pathlib import Path
 
+def _writable_dir(preferred: str, fallback: str) -> str:
+    """
+    Devuelve 'preferred' si se puede crear/escribir ahí; si no, usa 'fallback'.
+    """
+    preferred_path = Path(preferred)
+    fallback_path = Path(fallback)
 
-# Configure session to use filesystem (instead of signed cookies)
+    try:
+        preferred_path.mkdir(parents=True, exist_ok=True)
+        test_file = preferred_path / ".write_test"
+        with open(test_file, "w") as f:
+            f.write("ok")
+        test_file.unlink(missing_ok=True)
+        return str(preferred_path)
+    except Exception:
+        fallback_path.mkdir(parents=True, exist_ok=True)
+        return str(fallback_path)
+
+BASE_DIR = Path(__file__).parent
+
+# Lo que queremos en producción (Render con disk montado en /var/data)
+env_db_path = os.environ.get("DB_PATH", "/var/data/databases.db")
+env_session_dir = os.environ.get("SESSION_FILE_DIR", "/var/data/flask-session")
+
+# Si no es escribible, caemos a ./data dentro del proyecto (local)
+DATA_DIR = _writable_dir(Path(env_db_path).parent, BASE_DIR / "data")
+SESSION_DIR = _writable_dir(env_session_dir, BASE_DIR / "data" / "flask-session")
+
+DB_PATH = os.environ.get("DB_PATH", str(Path(DATA_DIR) / "databases.db"))
+
+# Sessions en filesystem, guardadas en disco persistente (o ./data en local)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 app.config["SESSION_FILE_DIR"] = SESSION_DIR
@@ -33,14 +61,12 @@ def after_request(response):
 
 def get_db():
     if "db" not in g:
-        # Asegurá que existan las carpetas del disco
-        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-        os.makedirs(SESSION_DIR, exist_ok=True)
+        # Asegura la carpeta donde vive la DB (ya garantizado por _writable_dir, pero por las dudas)
+        Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 
         g.db = sqlite3.connect(DB_PATH, check_same_thread=False)
         g.db.row_factory = sqlite3.Row
     return g.db
-
 
 @app.teardown_appcontext
 def close_db(error):
