@@ -45,6 +45,13 @@ SESSION_DIR = _writable_dir(env_session_dir, BASE_DIR / "data" / "flask-session"
 
 DB_PATH = os.environ.get("DB_PATH", str(Path(DATA_DIR) / "databases.db"))
 
+import shutil
+REPO_DB = os.path.join(os.path.dirname(__file__), "databases.db")
+if os.path.exists(REPO_DB) and not os.path.exists(DB_PATH):
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+    shutil.copy2(REPO_DB, DB_PATH)
+
+
 # Sessions en filesystem, guardadas en disco persistente (o ./data en local)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
@@ -68,6 +75,25 @@ def get_db():
         g.db.row_factory = sqlite3.Row
     return g.db
 
+@app.route("/_debug/db")
+def _debug_db():
+    import os
+    db = get_db()
+    tables = db.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    users = None
+    try:
+        users = db.execute("SELECT COUNT(*) AS c FROM users").fetchone()["c"]
+    except Exception:
+        users = "users table missing"
+    return {
+        "db_path": DB_PATH,
+        "exists": os.path.exists(DB_PATH),
+        "size_bytes": os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0,
+        "tables": [t["name"] for t in tables],
+        "users_count": users
+    }
+
+
 @app.teardown_appcontext
 def close_db(error):
     db = g.pop("db", None)
@@ -76,7 +102,7 @@ def close_db(error):
 
 @app.before_request
 def require_login():
-    exempt_routes = ["login", "static"]  # allow access to login and static files
+    exempt_routes = ["login", "static", "_debug_db"]  # allow access to login and static files
     if "user_id" not in session and request.endpoint not in exempt_routes:
         return redirect(url_for("login"))
 
