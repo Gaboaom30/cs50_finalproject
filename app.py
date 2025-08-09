@@ -46,10 +46,16 @@ SESSION_DIR = _writable_dir(env_session_dir, BASE_DIR / "data" / "flask-session"
 DB_PATH = os.environ.get("DB_PATH", str(Path(DATA_DIR) / "databases.db"))
 
 import shutil
+
 REPO_DB = os.path.join(os.path.dirname(__file__), "databases.db")
-if os.path.exists(REPO_DB) and not os.path.exists(DB_PATH):
+
+def _needs_seed(dst):
+    return (not os.path.exists(dst)) or os.path.getsize(dst) == 0
+
+if os.path.exists(REPO_DB) and _needs_seed(DB_PATH):
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     shutil.copy2(REPO_DB, DB_PATH)
+    print("SEED: Copiada DB del repo a", DB_PATH)
 
 
 # Sessions en filesystem, guardadas en disco persistente (o ./data en local)
