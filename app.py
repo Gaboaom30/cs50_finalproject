@@ -1,8 +1,6 @@
 import os
 import datetime
-from flask_sqlalchemy import SQLAlchemy
 import sqlite3
-
 from flask import Flask, flash, redirect, render_template, request, session, g, jsonify, url_for
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -13,9 +11,16 @@ from functools import wraps
 # Configure application
 app = Flask(__name__)
 app.secret_key = "your_secret_key"
+
+# === rutas del disco persistente (leyéndolas de ENV si existen) ===
+DB_PATH = os.environ.get("DB_PATH", "/var/data/databases.db")
+SESSION_DIR = os.environ.get("SESSION_FILE_DIR", "/var/data/flask-session")
+
+
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
+app.config["SESSION_FILE_DIR"] = SESSION_DIR
 Session(app)
 
 @app.after_request
@@ -28,8 +33,11 @@ def after_request(response):
 
 def get_db():
     if "db" not in g:
-        db_path = os.path.join(os.path.dirname(__file__), "databases.db")
-        g.db = sqlite3.connect(db_path)
+        # Asegurá que existan las carpetas del disco
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+        os.makedirs(SESSION_DIR, exist_ok=True)
+
+        g.db = sqlite3.connect(DB_PATH, check_same_thread=False)
         g.db.row_factory = sqlite3.Row
     return g.db
 
