@@ -1221,6 +1221,10 @@ def confirm():
             datetime.now(), movement["note"], document_id,
             movement["pm_id"], movement["name"], movement["price"], movement["total"], movement["status"]
         ))
+
+        db.execute("UPDATE inventory SET Quantity = Quantity + ? WHERE Id = ?",
+            (movement["qty"], movement["code"])
+        )
                 
     db.commit()
     session.pop("draft_movements", None)
