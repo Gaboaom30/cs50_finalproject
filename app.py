@@ -112,6 +112,17 @@ def require_login():
     if "user_id" not in session and request.endpoint not in exempt_routes:
         return redirect(url_for("login"))
 
+@app.get("/admin/download-db")
+def download_db():
+    token = request.args.get("token")
+    if token != os.environ.get("ADMIN_TOKEN"):
+        abort(403)
+    return send_file(
+        "/var/data/databases.db",  # e.g., /var/data/databases.db
+        as_attachment=True,
+        download_name="live_backup.db"
+    )
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
