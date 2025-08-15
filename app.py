@@ -142,6 +142,12 @@ def logout():
     session.clear()
     return redirect("/login")
 
+# app.py (or the module Render runs)
+@app.get("/ping")
+def ping():
+    return "OK"
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     db = get_db()
