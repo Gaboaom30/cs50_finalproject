@@ -944,7 +944,7 @@ def register_inventoryM():
             qty = -qty  # Negate quantity for output movements
 
         check_0 = db.execute("SELECT quantity FROM inventory WHERE id = ?", (code,)).fetchone()
-        if check_0 is None or check_0[0] + qty < 1:
+        if check_0 is None or check_0[0] + qty < 0:
             flash("Product not found or out of stock.")
             return redirect("/register")
 
